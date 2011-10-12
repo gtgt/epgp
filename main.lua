@@ -29,3 +29,5 @@ win.toolbar.icon4:SetTexture("EPGP", "gfx/process.png")
 win.toolbar.icon4:SetPoint("TOPLEFT", win.toolbar.icon3, "TOPRIGHT", 8, 0)
 win.toolbar.icon4:ResizeToTexture()
 win.toolbar.icon4:SetLayer(8)
+
+win.grid = NewGrid(win.workspace, 4, 10)

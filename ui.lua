@@ -2,7 +2,7 @@
 	EPGP GUI
 	UI Implementation
 	Jug <jug@mangband.org>
--]]
+--]]
 
 -- Default border colour
 local bdColour = {r = 0.2, g = 0.2, b = 0.2, a = 1.0}
@@ -12,6 +12,8 @@ local bdInsideColour = {r = 0.0, g = 0.0, b = 0.0, a = 1.0}
 local bkColour = {r = 0.15, g = 0.15, b = 0.15, a = 1.0}
 -- Default workspace colour
 local wkColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
+-- Default grid background colour
+local gdColour = {r = 0.0, g = 0.0, b = 0.0, a = 1.0}
 
 -- Border width
 local bdWidth = 2
@@ -103,7 +105,8 @@ function NewWindow(description, title)
 	-- Close icon
 	win.closeicon = UI.CreateFrame("Texture", "CloseButton", win.titlebar)
 	win.closeicon:SetTexture("EPGP", "gfx/close-unfocused.png")
-	win.closeicon:SetPoint("TOPRIGHT", win.titlebar, "TOPRIGHT", -bdWidth, bdWidth)
+	win.closeicon:SetPoint("TOPRIGHT", win.titlebar, "TOPRIGHT", 
+		-bdWidth, bdWidth)
 	win.closeicon:ResizeToTexture()
 	win.closeicon:SetLayer(5)
 	function win.closeicon.Event:MouseIn()
@@ -155,21 +158,101 @@ function NewWindow(description, title)
 	win.toolbar:SetPoint("TOPLEFT", win.titlebar, "BOTTOMLEFT")
 	win.toolbar:SetPoint("TOPRIGHT", win.titlebar, "BOTTOMRIGHT")
 	win.toolbar:SetHeight(32)
-	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, bkColour.b, bkColour.a)	
+	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, 
+		bkColour.b, bkColour.a)	
 	-- Statusbar
 	win.statusbar = UI.CreateFrame("Frame", "StatusBar", win.back)
 	win.statusbar:SetLayer(6)
 	win.statusbar:SetPoint("BOTTOMLEFT", win.back, "BOTTOMLEFT")
 	win.statusbar:SetPoint("BOTTOMRIGHT", win.back, "BOTTOMRIGHT")
 	win.statusbar:SetHeight(32)
-	win.statusbar:SetBackgroundColor(bkColour.r, bkColour.g, bkColour.b, bkColour.a)
+	win.statusbar:SetBackgroundColor(bkColour.r, bkColour.g, 
+		bkColour.b, bkColour.a)
 	-- Workspace
 	win.workspace = UI.CreateFrame("Frame", "Workspace", win.back)
 	win.workspace:SetLayer(6)
 	win.workspace:SetPoint("TOPLEFT", win.toolbar, "BOTTOMLEFT", 4, 4)
 	win.workspace:SetPoint("BOTTOMRIGHT", win.statusbar, "TOPRIGHT", -4, -4)
-	win.workspace:SetBackgroundColor(wkColour.r, wkColour.g, wkColour.b, wkColour.a)	
+	win.workspace:SetBackgroundColor(wkColour.r, wkColour.g, 
+		wkColour.b, wkColour.a)	
 	-- Mouse handling mode
 	win:SetMouseMasking("limited")
 	return win
+end
+
+-- Create a new grid
+function NewGrid(parent, numcols, numrows)
+	-- Create frame
+	grid = UI.CreateFrame("Frame", "AGrid", parent)
+	-- Our properties
+	grid.numCols = numcols
+	grid.numRows = numrows
+	grid.rowHeight = 26
+	-- Internal properties
+	grid.rows = {}
+	-- position within our parent
+	grid:SetLayer(0)
+	grid:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, 4)
+	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
+	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
+	
+	-- Add a row
+	-- A row is both a collection of UI elements and the row/cell data
+	function grid:AddRow()
+		row = UI.CreateFrame("Frame", "ARow", self)
+		ralign = self.rows[#self.rows]
+		if not ralign then
+			row:SetPoint("TOPLEFT", self, "TOPLEFT")
+			row:SetPoint("RIGHT", self, "RIGHT")
+		else
+			row:SetPoint("TOPLEFT", ralign, "BOTTOMLEFT")
+			row:SetPoint("RIGHT", self, "RIGHT")			
+		end
+		row:SetHeight(self.rowHeight)
+		-- Alternate row background colour
+		c = (#self.rows % 2) / 30
+		row:SetBackgroundColor(c, c, c, gdColour.a)
+		row.cols = {}
+		align = nil
+		for i = 1, self.numCols do 
+			-- Create and align the cell
+			cell = UI.CreateFrame("Frame", "ACell", row)
+			if not align then
+				-- align to row start
+				cell:SetPoint("TOPLEFT", row, "TOPLEFT")
+				cell:SetPoint("BOTTOM", row, "BOTTOM")				
+			else
+				-- align to last cell
+				cell:SetPoint("TOPLEFT", align, "TOPRIGHT")
+				cell:SetPoint("BOTTOM", row, "BOTTOM")							
+			end
+			cell:SetWidth(row:GetWidth() / self.numCols)
+			align = cell
+			-- Add a label to the cell
+			label = UI.CreateFrame("Text", "ALabel", cell)
+			label:SetText("Testing")
+			label:SetFontSize(18)
+			label:SetFont("EPGP", "font/DejaVuSans.ttf")
+			label:SetPoint("TOPLEFT", cell, "TOPLEFT")
+			label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
+			table.insert(row.cols, {cell})
+			
+			-- Row mouse event handlers
+			function row.Event:MouseIn()
+				self.r, self.g, self.b, self.a = self:GetBackgroundColor()
+				self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
+			end
+			function row.Event:MouseOut()
+				self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+			end
+		end
+		table.insert(self.rows, row)
+	end
+	
+	-- Create our rows
+	for i = 1, grid.numRows do
+		grid:AddRow()
+	end
+	
+	return grid
 end
