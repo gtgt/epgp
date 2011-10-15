@@ -23,6 +23,9 @@ function UpdateGrid()
 		player = epgp.players[i]
 		row = win.grid.rows[i]
 		row:SetText(1, player.playerName)
+		if player.calling then
+			row:SetTextColour(1, ClassColours[player.calling])
+		end
 		row:SetText(2, player:GetEP())
 		row:SetText(3, player:GetGP())
 		row:SetText(4, player:GetPR())
@@ -34,7 +37,7 @@ function ButtonAddClick()
 	raid = GetRaidMembers()
 	-- Add players to guild epgp data
 	for _, p in pairs(raid) do
-		epgp:AddPlayer(p)
+		epgp:AddPlayer(p.name, p.calling)
 	end
 	UpdateGrid(win.grid, epgp)
 end
@@ -42,7 +45,7 @@ end
 -- Saved variables have been loaded
 function onVariablesLoaded()
 	for _, p in pairs(saved_epgp) do
-		np = epgp:AddPlayer(p.playerName)
+		np = epgp:AddPlayer(p.playerName, p.calling)
 		np:SetGP(tonumber(p.GP))
 		np:SetEP(tonumber(p.EP))
 	end
@@ -56,18 +59,18 @@ function onVariablesSave(id)
 	for _, p in pairs(epgp.players) do
 		player = {}
 		player.playerName = p.playerName
+		player.calling = p.calling
 		player.EP = tostring(p:GetEP())
 		player.GP = tostring(p:GetGP())
-		print(player.playerName.." "..player.GP)
 		table.insert(saved_epgp, player)
 	end
 end
 
 -- Toolbar icons
-win.toolbar:AddButton("iadd.png", ButtonAddClick)
-win.toolbar:AddButton("idelete.png", nil)
-win.toolbar:AddButton("icalculator.png", nil)
-win.toolbar:AddButton("process.png", nil)
+win.toolbar:AddButton("iadd.png", "add.png", "Add raid members", ButtonAddClick)
+win.toolbar:AddButton("idelete.png", "delete.png", "", nil)
+win.toolbar:AddButton("icalculator.png", "calculator.png", "", nil)
+win.toolbar:AddButton("process.png", "process.png", "", nil)
 
 win.grid = NewGrid(win.workspace, 4, 10)
 

@@ -161,9 +161,14 @@ function NewWindow(description, title)
 	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, 
 		bkColour.b, bkColour.a)
 	win.toolbar.buttons = {}
-	function win.toolbar:AddButton(icon, callback)
+	function win.toolbar:AddButton(icon, iconhighlight, tooltip, callback)
 		but = UI.CreateFrame("Texture", "AddButton", win.toolbar)
+		-- Remember icons
 		but:SetTexture("EPGP", "gfx/"..icon)
+		but.activeIcon = iconhighlight
+		but.inactiveIcon = icon
+		-- Remember tooltips
+		but.tooltip = tooltip
 		if #self.buttons == 0 then
 			-- first button aligned to toolbar
 			but:SetPoint("TOPLEFT", win.toolbar, "TOPLEFT", 4, 6)
@@ -177,6 +182,17 @@ function NewWindow(description, title)
 		table.insert(self.buttons, but)
 		-- Set click handler
 		but.Event.LeftDown = callback
+		-- Mouseover highlights
+		function but.Event:MouseIn()
+			self:SetTexture("EPGP", "gfx/"..self.activeIcon)
+			parent = FindParent(self)
+			parent:SetStatus(self.tooltip)
+		end
+		function but.Event:MouseOut()
+			self:SetTexture("EPGP", "gfx/"..self.inactiveIcon)
+			parent = FindParent(self)
+			parent:SetStatus("")
+		end
 	end
 	-- Statusbar
 	win.statusbar = UI.CreateFrame("Frame", "StatusBar", win.back)
@@ -186,6 +202,16 @@ function NewWindow(description, title)
 	win.statusbar:SetHeight(32)
 	win.statusbar:SetBackgroundColor(bkColour.r, bkColour.g, 
 		bkColour.b, bkColour.a)
+	win.statusbar.label = UI.CreateFrame("Text", "Status", win.statusbar)
+	win.statusbar.label:SetText("")
+	win.statusbar.label:SetPoint("TOPLEFT", win.statusbar, "TOPLEFT", 8, 0)
+	win.statusbar.label:SetPoint("BOTTOMRIGHT", win.statusbar, "BOTTOMRIGHT")
+	win.statusbar.label:SetFontSize(14)
+	win.caption:SetLayer(9)
+	-- Allow setting of the status
+	function win:SetStatus(text)
+		win.statusbar.label:SetText(text)
+	end
 	-- Workspace
 	win.workspace = UI.CreateFrame("Frame", "Workspace", win.back)
 	win.workspace:SetLayer(6)
@@ -213,6 +239,31 @@ function NewGrid(parent)
 	grid:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, 4)
 	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
 	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
+	
+	-- Resize handler
+	function grid.Event:Size()
+		if self.numRows <= 0 then return end
+		-- Adjust width of our columns, first find min widths
+		widths = {}
+		for i = 1, self.numCols do table.insert(widths, 0) end
+		for i, row in pairs(self.rows) do
+			for j = 1, self.numCols do
+				wid = row.cols[j].label:GetFullWidth()
+				if wid > widths[j] then
+					widths[j] = wid
+				end
+			end
+		end
+		-- Now set width of columns
+		wid = self:GetWidth() / self.numCols
+		for i, row in pairs(self.rows) do
+			for j = 1, self.numCols do
+				if wid > widths[j] then
+					row.cols[j]:SetWidth(wid)
+				end
+			end
+		end
+	end
 	
 	-- Clear all contents (not the actual row UI elements)
 	function grid:Clear()
@@ -244,9 +295,9 @@ function NewGrid(parent)
 		align = nil
 		-- If this is first row, determine how many columns we need
 		if self.numRows == 0 then
-			self.numRows = self.numRows + 1
 			self.numCols = #rowdata
 		end
+		self.numRows = self.numRows + 1
 		for i = 1, self.numCols do 
 			-- Create and align the cell
 			cell = UI.CreateFrame("Frame", "ACell", row)
@@ -265,8 +316,8 @@ function NewGrid(parent)
 			label = UI.CreateFrame("Text", "ALabel", cell)
 			cell.label = label
 			label:SetText(rowdata[i])
-			label:SetFontSize(18)
-			label:SetFont("EPGP", "font/DejaVuSans.ttf")
+			label:SetFontSize(16)
+			--label:SetFont("EPGP", "font/DejaVuSans.ttf")
 			label:SetPoint("TOPLEFT", cell, "TOPLEFT")
 			label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
 			table.insert(row.cols, cell)
@@ -283,12 +334,11 @@ function NewGrid(parent)
 		function row:SetText(index, text)
 			self.cols[index].label:SetText(tostring(text))
 		end
+		-- Set a cell's text colour by index
+		function row:SetTextColour(index, c)
+			self.cols[index].label:SetFontColor(c.r,c.g,c.b,1)
+		end
 		table.insert(self.rows, row)
-	end
-	
-	-- Create our rows
-	for i = 1, grid.numRows do
-		grid:AddRow()
 	end
 	
 	return grid

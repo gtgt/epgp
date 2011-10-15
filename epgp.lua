@@ -8,12 +8,13 @@ EPGP data structures and calculations.
 -- Global EPGP Constants
 EPGP = {
 	baseGP = 100, -- Must be greater than zero
-	minEP = 1000,
+	minEP = 500,
 }
 
 -- Per player EPGP data
 PlayerEPGP = {
 	playerName = "",
+	calling = "",
 	EP = 0,
 	realGP = 0,
 	active = false,
@@ -49,7 +50,6 @@ function PlayerEPGP:GetEP()
 	return self.EP
 end
 function PlayerEPGP:SetEP(ep)
-	if ep < EPGP.minEP then ep = EPGP.minEP end	
 	self.EP = ep
 end
 
@@ -109,9 +109,10 @@ function GuildEPGP:AddGP(player, gp)
 end
 
 -- Add a new player to the dataset and return the new player data
-function GuildEPGP:AddPlayer(playername)
+function GuildEPGP:AddPlayer(playername, calling)
 	p = PlayerEPGP:Create()
 	p.playerName = playername
+	p.calling = calling
 	-- Don't add players already in the dataset
 	new = true
 	for _, player in pairs(self.players) do
