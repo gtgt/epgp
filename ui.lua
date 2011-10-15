@@ -147,9 +147,12 @@ function NewWindow(description, title)
 			m = Inspect.Mouse()
 			x = m.x - self.x
 			y = m.y - self.y
-			if x > 150 and y > 60 then
+			if y > 60 then
 				w = FindParent(self)
-				w:SetWidth(x)
+				if not w.minWidth then w.minWidth = 0 end
+				if x > w.minWidth then
+					w:SetWidth(x)
+				end
 				w:SetHeight(y)
 			end
 		end
@@ -281,6 +284,20 @@ function NewGrid(parent)
 				self.headers.cols[j]:SetWidth(widths[j])
 			end
 		end		
+		-- Hide rows that would hang off the bottom of the grid
+		space = self:GetHeight()
+		maxrows = math.floor(space / self.rowHeight)
+		for i = 1, self.numRows do
+			self.rows[i]:SetVisible(i < maxrows)
+		end
+		-- Limit minimum width to avoid columns hanging off edge
+		-- XXX This is a pathetic hack
+		minwidth = 0
+		for i = 1, #widths do
+			minwidth = minwidth + widths[i]
+		end
+		parent = FindParent(self)
+		parent.minWidth = widths[1] + minwidth
 	end
 	function grid.Event:Size()
 		self:Resize()
