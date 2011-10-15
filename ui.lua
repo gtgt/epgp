@@ -14,6 +14,8 @@ local bkColour = {r = 0.15, g = 0.15, b = 0.15, a = 1.0}
 local wkColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 -- Default grid background colour
 local gdColour = {r = 0.0, g = 0.0, b = 0.0, a = 1.0}
+-- Default grid header colour
+local ghColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 
 -- Border width
 local bdWidth = 2
@@ -239,7 +241,13 @@ function NewGrid(parent)
 	grid:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, 4)
 	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
 	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
-	
+	-- column headers
+	grid.headers = UI.CreateFrame("Frame", "Headers", grid)
+	grid.headers:SetPoint("TOPLEFT", grid, "TOPLEFT")
+	grid.headers:SetPoint("RIGHT", grid, "RIGHT")
+	grid.headers:SetHeight(grid.rowHeight)
+	grid.headers:SetBackgroundColor(
+		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
 	-- Resize handler
 	function grid.Event:Size()
 		if self.numRows <= 0 then return end
@@ -263,6 +271,12 @@ function NewGrid(parent)
 				end
 			end
 		end
+		-- And width of headers
+		for j = 1, self.numCols do
+			if wid > widths[j] then
+				self.headers.cols[j]:SetWidth(wid)
+			end
+		end		
 	end
 	
 	-- Clear all contents (not the actual row UI elements)
@@ -276,28 +290,41 @@ function NewGrid(parent)
 	
 	-- Add a row
 	-- A row is both a collection of UI elements and the row/cell data
-	function grid:AddRow(rowdata)
+	-- If headers is true this is the special column title headers row
+	function grid:AddRow(rowdata, headers)
 		-- Create the row
-		row = UI.CreateFrame("Frame", "ARow", self)
+		if not headers then
+			row = UI.CreateFrame("Frame", "ARow", self)
+		else
+			row = self.headers
+		end
 		ralign = self.rows[#self.rows]
-		if not ralign then
+		if headers then
 			row:SetPoint("TOPLEFT", self, "TOPLEFT")
 			row:SetPoint("RIGHT", self, "RIGHT")
 		else
-			row:SetPoint("TOPLEFT", ralign, "BOTTOMLEFT")
-			row:SetPoint("RIGHT", self, "RIGHT")			
+			if not ralign then
+				row:SetPoint("TOPLEFT", self.headers, "BOTTOMLEFT")
+				row:SetPoint("RIGHT", self, "RIGHT")
+			else
+				row:SetPoint("TOPLEFT", ralign, "BOTTOMLEFT")
+				row:SetPoint("RIGHT", self, "RIGHT")			
+			end
 		end
 		row:SetHeight(self.rowHeight)
 		-- Alternate row background colour
 		c = (#self.rows % 2) / 30
-		row:SetBackgroundColor(c, c, c, gdColour.a)
+		if not headers then
+			row:SetBackgroundColor(c, c, c, gdColour.a)
+		end
 		row.cols = {}
 		align = nil
 		-- If this is first row, determine how many columns we need
-		if self.numRows == 0 then
+		if headers then
 			self.numCols = #rowdata
+		else
+			self.numRows = self.numRows + 1
 		end
-		self.numRows = self.numRows + 1
 		for i = 1, self.numCols do 
 			-- Create and align the cell
 			cell = UI.CreateFrame("Frame", "ACell", row)
@@ -338,7 +365,11 @@ function NewGrid(parent)
 		function row:SetTextColour(index, c)
 			self.cols[index].label:SetFontColor(c.r,c.g,c.b,1)
 		end
-		table.insert(self.rows, row)
+		if not headers then
+			table.insert(self.rows, row)
+		else
+			self.headers = row
+		end
 	end
 	
 	return grid

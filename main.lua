@@ -21,7 +21,7 @@ function UpdateGrid()
 	nump = epgp:GetNumPlayers()
 	numr = win.grid.numRows
 	while numr < nump do
-		win.grid:AddRow({"Foo","0","0","0"})
+		win.grid:AddRow({"","0","0","0"}, false)
 		numr = numr + 1
 	end
 	-- Add all the player data to the grid
@@ -78,7 +78,9 @@ win.toolbar:AddButton("idelete.png", "delete.png", "", nil)
 win.toolbar:AddButton("icalculator.png", "calculator.png", "", nil)
 win.toolbar:AddButton("process.png", "process.png", "", nil)
 
+-- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
+win.grid:AddRow({"Name", "EP", "GP", "PR"}, true)
 
 -- Global event handlers
 table.insert(Event.Addon.SavedVariables.Load.End, 
