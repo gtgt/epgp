@@ -33,7 +33,6 @@ function PlayerEPGP:GetGP()
 	return self.realGP + EPGP.baseGP
 end
 function PlayerEPGP:SetGP(gp)
-	gp = gp - EPGP.baseGP
 	if gp < 0 then gp = 0 end
 	self.realGP = gp
 end

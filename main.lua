@@ -9,6 +9,12 @@ win:SetWidth(400)
 win:SetHeight(300)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 
+-- Rounding numbers
+function round(num, places)
+  local mult = 10^(places or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+
 -- Update our grid with the EPGP data
 function UpdateGrid()
 	win.grid:Clear()
@@ -28,7 +34,7 @@ function UpdateGrid()
 		end
 		row:SetText(2, player:GetEP())
 		row:SetText(3, player:GetGP())
-		row:SetText(4, player:GetPR())
+		row:SetText(4, round(player:GetPR(),2))
 	end
 end
 
@@ -61,7 +67,7 @@ function onVariablesSave(id)
 		player.playerName = p.playerName
 		player.calling = p.calling
 		player.EP = tostring(p:GetEP())
-		player.GP = tostring(p:GetGP())
+		player.GP = tostring(p.realGP)
 		table.insert(saved_epgp, player)
 	end
 end
