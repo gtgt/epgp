@@ -159,7 +159,25 @@ function NewWindow(description, title)
 	win.toolbar:SetPoint("TOPRIGHT", win.titlebar, "BOTTOMRIGHT")
 	win.toolbar:SetHeight(32)
 	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, 
-		bkColour.b, bkColour.a)	
+		bkColour.b, bkColour.a)
+	win.toolbar.buttons = {}
+	function win.toolbar:AddButton(icon, callback)
+		but = UI.CreateFrame("Texture", "AddButton", win.toolbar)
+		but:SetTexture("EPGP", "gfx/"..icon)
+		if #self.buttons == 0 then
+			-- first button aligned to toolbar
+			but:SetPoint("TOPLEFT", win.toolbar, "TOPLEFT", 4, 6)
+		else
+			-- subsequent buttons aligned to previous button
+			but:SetPoint("TOPLEFT", 
+				self.buttons[#self.buttons], "TOPRIGHT", 8, 0)
+		end
+		but:ResizeToTexture()
+		but:SetLayer(8)
+		table.insert(self.buttons, but)
+		-- Set click handler
+		but.Event.LeftDown = callback
+	end
 	-- Statusbar
 	win.statusbar = UI.CreateFrame("Frame", "StatusBar", win.back)
 	win.statusbar:SetLayer(6)
@@ -181,12 +199,12 @@ function NewWindow(description, title)
 end
 
 -- Create a new grid
-function NewGrid(parent, numcols, numrows)
+function NewGrid(parent)
 	-- Create frame
 	grid = UI.CreateFrame("Frame", "AGrid", parent)
 	-- Our properties
-	grid.numCols = numcols
-	grid.numRows = numrows
+	grid.numCols = 0
+	grid.numRows = 0
 	grid.rowHeight = 26
 	-- Internal properties
 	grid.rows = {}
@@ -196,9 +214,19 @@ function NewGrid(parent, numcols, numrows)
 	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
 	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
 	
+	-- Clear all contents (not the actual row UI elements)
+	function grid:Clear()
+		for _, row in pairs(self.rows) do
+			for i = 1, #row.cols do
+				row:SetText(i, "")
+			end
+		end
+	end
+	
 	-- Add a row
 	-- A row is both a collection of UI elements and the row/cell data
-	function grid:AddRow()
+	function grid:AddRow(rowdata)
+		-- Create the row
 		row = UI.CreateFrame("Frame", "ARow", self)
 		ralign = self.rows[#self.rows]
 		if not ralign then
@@ -214,6 +242,11 @@ function NewGrid(parent, numcols, numrows)
 		row:SetBackgroundColor(c, c, c, gdColour.a)
 		row.cols = {}
 		align = nil
+		-- If this is first row, determine how many columns we need
+		if self.numRows == 0 then
+			self.numRows = self.numRows + 1
+			self.numCols = #rowdata
+		end
 		for i = 1, self.numCols do 
 			-- Create and align the cell
 			cell = UI.CreateFrame("Frame", "ACell", row)
@@ -230,21 +263,25 @@ function NewGrid(parent, numcols, numrows)
 			align = cell
 			-- Add a label to the cell
 			label = UI.CreateFrame("Text", "ALabel", cell)
-			label:SetText("Testing")
+			cell.label = label
+			label:SetText(rowdata[i])
 			label:SetFontSize(18)
 			label:SetFont("EPGP", "font/DejaVuSans.ttf")
 			label:SetPoint("TOPLEFT", cell, "TOPLEFT")
 			label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
-			table.insert(row.cols, {cell})
-			
-			-- Row mouse event handlers
-			function row.Event:MouseIn()
-				self.r, self.g, self.b, self.a = self:GetBackgroundColor()
-				self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
-			end
-			function row.Event:MouseOut()
-				self:SetBackgroundColor(self.r, self.g, self.b, self.a)
-			end
+			table.insert(row.cols, cell)
+		end
+		-- Row mouse event handlers
+		function row.Event:MouseIn()
+			self.r, self.g, self.b, self.a = self:GetBackgroundColor()
+			self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
+		end
+		function row.Event:MouseOut()
+			self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+		end
+		-- Set a cell's text by index
+		function row:SetText(index, text)
+			self.cols[index].label:SetText(tostring(text))
 		end
 		table.insert(self.rows, row)
 	end

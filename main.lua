@@ -1,33 +1,78 @@
 
+-- Our main EPGP data
+epgp = GuildEPGP:Create()
+
+-- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
 win:SetVisible(true)
 win:SetWidth(400)
 win:SetHeight(300)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 
+-- Update our grid with the EPGP data
+function UpdateGrid()
+	win.grid:Clear()
+	nump = epgp:GetNumPlayers()
+	numr = win.grid.numRows
+	while numr < nump do
+		win.grid:AddRow({"Foo","0","0","0"})
+		numr = numr + 1
+	end
+	-- Add all the player data to the grid
+	for i = 1, nump do
+		player = epgp.players[i]
+		row = win.grid.rows[i]
+		row:SetText(1, player.playerName)
+		row:SetText(2, player:GetEP())
+		row:SetText(3, player:GetGP())
+		row:SetText(4, player:GetPR())
+	end
+end
+
+-- Some event handlers
+function ButtonAddClick()
+	raid = GetRaidMembers()
+	-- Add players to guild epgp data
+	for _, p in pairs(raid) do
+		epgp:AddPlayer(p)
+	end
+	UpdateGrid(win.grid, epgp)
+end
+
+-- Saved variables have been loaded
+function onVariablesLoaded()
+	for _, p in pairs(saved_epgp) do
+		np = epgp:AddPlayer(p.playerName)
+		np:SetGP(tonumber(p.GP))
+		np:SetEP(tonumber(p.EP))
+	end
+	UpdateGrid()
+end
+
+-- About to save variables
+function onVariablesSave(id)
+	if id ~= "EPGP" then return end
+	saved_epgp = {}
+	for _, p in pairs(epgp.players) do
+		player = {}
+		player.playerName = p.playerName
+		player.EP = tostring(p:GetEP())
+		player.GP = tostring(p:GetGP())
+		print(player.playerName.." "..player.GP)
+		table.insert(saved_epgp, player)
+	end
+end
+
 -- Toolbar icons
-win.toolbar.icon1 = UI.CreateFrame("Texture", "AddButton", win.toolbar)
-win.toolbar.icon1:SetTexture("EPGP", "gfx/iadd.png")
-win.toolbar.icon1:SetPoint("TOPLEFT", win.toolbar, "TOPLEFT", 4, 6)
-win.toolbar.icon1:ResizeToTexture()
-win.toolbar.icon1:SetLayer(8)
-
-win.toolbar.icon2 = UI.CreateFrame("Texture", "Button2", win.toolbar)
-win.toolbar.icon2:SetTexture("EPGP", "gfx/idelete.png")
-win.toolbar.icon2:SetPoint("TOPLEFT", win.toolbar.icon1, "TOPRIGHT", 8, 0)
-win.toolbar.icon2:ResizeToTexture()
-win.toolbar.icon2:SetLayer(8)
-
-win.toolbar.icon3 = UI.CreateFrame("Texture", "Button3", win.toolbar)
-win.toolbar.icon3:SetTexture("EPGP", "gfx/icalculator.png")
-win.toolbar.icon3:SetPoint("TOPLEFT", win.toolbar.icon2, "TOPRIGHT", 8, 0)
-win.toolbar.icon3:ResizeToTexture()
-win.toolbar.icon3:SetLayer(8)
-
-win.toolbar.icon4 = UI.CreateFrame("Texture", "Button4", win.toolbar)
-win.toolbar.icon4:SetTexture("EPGP", "gfx/process.png")
-win.toolbar.icon4:SetPoint("TOPLEFT", win.toolbar.icon3, "TOPRIGHT", 8, 0)
-win.toolbar.icon4:ResizeToTexture()
-win.toolbar.icon4:SetLayer(8)
+win.toolbar:AddButton("iadd.png", ButtonAddClick)
+win.toolbar:AddButton("idelete.png", nil)
+win.toolbar:AddButton("icalculator.png", nil)
+win.toolbar:AddButton("process.png", nil)
 
 win.grid = NewGrid(win.workspace, 4, 10)
+
+-- Global event handlers
+table.insert(Event.Addon.SavedVariables.Load.End, 
+	{onVariablesLoaded, "EPGP", "Saved vars loaded"})
+table.insert(Event.Addon.SavedVariables.Save.Begin, 
+	{onVariablesSave, "EPGP", "About to save vars"})

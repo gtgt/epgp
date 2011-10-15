@@ -13,16 +13,26 @@ EPGP = {
 
 -- Per player EPGP data
 PlayerEPGP = {
+	playerName = "",
 	EP = 0,
 	realGP = 0,
 	active = false,
 }
+PlayerEPGP_mt = {__index = PlayerEPGP} 
+
+-- Constructor
+function PlayerEPGP:Create()
+	local inst = {}
+	setmetatable(inst, PlayerEPGP_mt)
+	return inst
+end
 
 -- Get/Set current GP
 function PlayerEPGP:GetGP()
 	return self.realGP + EPGP.baseGP
 end
 function PlayerEPGP:SetGP(gp)
+	gp = gp - EPGP.baseGP
 	if gp < 0 then gp = 0 end
 	self.realGP = gp
 end
@@ -45,7 +55,7 @@ end
 
 -- Get current PR
 function PlayerEPGP:GetPR()
-	return self.GetEP() / self.GetGP()
+	return self:GetEP() / self:GetGP()
 end
 
 -- Guild EPGP data
@@ -53,11 +63,19 @@ GuildEPGP = {
 	-- per player EPGP data	
 	players = {}
 }
+GuildEPGP_mt = {__index = GuildEPGP}
+
+-- Constructor
+function GuildEPGP:Create()
+	local inst = {}
+	setmetatable(inst, GuildEPGP_mt)
+	return inst
+end
 
 -- Do decay
 -- Applies decay across all players. percentage is an integer, 1 to 100
--- The "active" state of the player is not considered, decay occurs if the player
--- is in the raid or not.
+-- The "active" state of the player is not considered, decay occurs if the 
+-- player is in the raid or not.
 function GuildEPGP:ApplyDecay(percentage)
 	-- Sanity
 	if percentage < 1 or percentage > 100 then return end 
@@ -88,4 +106,27 @@ function GuildEPGP:AddGP(player, gp)
 	if p then
 		p.IncGP(gp)
 	end
+end
+
+-- Add a new player to the dataset and return the new player data
+function GuildEPGP:AddPlayer(playername)
+	p = PlayerEPGP:Create()
+	p.playerName = playername
+	-- Don't add players already in the dataset
+	new = true
+	for _, player in pairs(self.players) do
+		if player.playerName == playername then
+			new = false
+			break
+		end
+	end
+	if new then
+		table.insert(self.players, p)
+	end
+	return p
+end
+
+-- Get the number of players in the dataset
+function GuildEPGP:GetNumPlayers()
+	return #self.players
 end

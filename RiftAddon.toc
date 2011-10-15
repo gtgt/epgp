@@ -6,8 +6,8 @@ Author = "Jug@Steampike"
 Version = "0.1.0"
 Email = "jug@mangband.org"
 Environment = "1.5"
-RunOnStartup = {"ui.lua", "epgp.lua", "main.lua"}
-SavedVariables = {
+RunOnStartup = {"game.lua", "ui.lua", "epgp.lua", "main.lua"}
+SavedVariables = { saved_epgp = "account"
 }
 Dependencies = {
 }
