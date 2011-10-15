@@ -36,6 +36,7 @@ function UpdateGrid()
 		row:SetText(3, player:GetGP())
 		row:SetText(4, round(player:GetPR(),2))
 	end
+	win.grid:Resize()
 end
 
 -- Some event handlers
@@ -55,7 +56,7 @@ function onVariablesLoaded()
 		np:SetGP(tonumber(p.GP))
 		np:SetEP(tonumber(p.EP))
 	end
-	UpdateGrid()
+	UpdateGrid()	
 end
 
 -- About to save variables

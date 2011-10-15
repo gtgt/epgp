@@ -249,8 +249,8 @@ function NewGrid(parent)
 	grid.headers:SetBackgroundColor(
 		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
 	-- Resize handler
-	function grid.Event:Size()
-		if self.numRows <= 0 then return end
+	function grid:Resize()
+		if not self.numRows or self.numRows <= 0 then return end
 		-- Adjust width of our columns, first find min widths
 		widths = {}
 		for i = 1, self.numCols do table.insert(widths, 0) end
@@ -268,6 +268,8 @@ function NewGrid(parent)
 			for j = 1, self.numCols do
 				if wid > widths[j] then
 					row.cols[j]:SetWidth(wid)
+				else
+					row.cols[j]:SetWidth(widths[j])
 				end
 			end
 		end
@@ -275,8 +277,13 @@ function NewGrid(parent)
 		for j = 1, self.numCols do
 			if wid > widths[j] then
 				self.headers.cols[j]:SetWidth(wid)
+			else
+				self.headers.cols[j]:SetWidth(widths[j])
 			end
 		end		
+	end
+	function grid.Event:Size()
+		self:Resize()
 	end
 	
 	-- Clear all contents (not the actual row UI elements)
@@ -350,12 +357,14 @@ function NewGrid(parent)
 			table.insert(row.cols, cell)
 		end
 		-- Row mouse event handlers
-		function row.Event:MouseIn()
-			self.r, self.g, self.b, self.a = self:GetBackgroundColor()
-			self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
-		end
-		function row.Event:MouseOut()
-			self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+		if not headers then
+			function row.Event:MouseIn()
+				self.r, self.g, self.b, self.a = self:GetBackgroundColor()
+				self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
+			end
+			function row.Event:MouseOut()
+				self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+			end
 		end
 		-- Set a cell's text by index
 		function row:SetText(index, text)
