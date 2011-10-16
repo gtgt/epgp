@@ -94,6 +94,18 @@ function ButtonTimerClick()
 	end
 end
 
+-- Delete players data
+function ButtonDeleteClick()
+	nuke = win.grid:GetSelection()
+	if #nuke <= 0 then return end
+	-- delete, go backwards
+	for i = #nuke, 1, -1 do
+		table.remove(epgp.players, nuke[i])
+	end
+	win.grid:ClearSelection()
+	UpdateGrid()
+end
+
 -- Add some EP to all currently active players
 function IncrementRaidEP()
 	-- Work out the amount of EP per interval
@@ -147,7 +159,8 @@ end
 -- Toolbar icons
 win.toolbar:AddButton("iadd.png", "add.png", 
 	"Add current raid members", ButtonAddClick)
-win.toolbar:AddButton("idelete.png", "delete.png", "", nil)
+win.toolbar:AddButton("idelete.png", "delete.png", 
+	"Delete selected players (Warning: Permanent!)", ButtonDeleteClick)
 win.toolbar:AddButton("icalculator.png", "calculator.png", "", nil)
 win.toolbar:AddButton("iprocess.png", "process.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
