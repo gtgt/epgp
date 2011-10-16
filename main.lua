@@ -1,4 +1,8 @@
 
+-- Update frequency when raiding (in seconds)
+-- EP is adjusted at each interval.
+UpdateFreq = 10
+
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
 
@@ -8,6 +12,7 @@ win:SetVisible(true)
 win:SetWidth(400)
 win:SetHeight(300)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
+win.timerActive = false
 
 -- Rounding numbers
 function round(num, places)
@@ -32,7 +37,7 @@ function UpdateGrid()
 		if player.calling then
 			row:SetTextColour(1, ClassColours[player.calling])
 		end
-		row:SetText(2, player:GetEP())
+		row:SetText(2, round(player:GetEP(), 1))
 		row:SetText(3, player:GetGP())
 		row:SetText(4, round(player:GetPR(),2))
 	end
@@ -76,6 +81,30 @@ function ButtonAddClick()
 	UpdateGrid(win.grid, epgp)
 end
 
+-- Start/Stop raid timer
+function ButtonTimerClick()
+	win.timerActive = not win.timerActive
+	if win.timerActive then
+		win.lastFrameTime = Inspect.Time.Real()
+		win.caption:SetText("Chimaera EPGP [Raid Active]")
+	else
+		win.caption:SetText("Chimaera EPGP")
+	end
+end
+
+-- Add some EP to all currently active players
+function IncrementRaidEP()
+	-- Work out the amount of EP per interval
+	ep = (EPGP.epPerHour / 3600) * UpdateFreq
+	-- Add this to all active players
+	for _, p in ipairs(epgp.players) do
+		if p.active then
+			p:IncEP(ep)
+		end
+	end
+	UpdateGrid()
+end
+
 -- Saved variables have been loaded
 function onVariablesLoaded()
 	for _, p in pairs(saved_epgp) do
@@ -100,11 +129,26 @@ function onVariablesSave(id)
 	end
 end
 
+-- Frame update event handler, used for timing
+function onFrameUpdate()
+	-- Bail out if we're not actively timing
+	if not win.timerActive then return end
+	if not win.lastFrameTime then win.lastFrameTime = 0 end
+	-- Get the current time
+	t = Inspect.Time.Real()
+	if t > win.lastFrameTime + UpdateFreq then
+		win.lastFrameTime = t
+		IncrementRaidEP()
+	end
+end
+
 -- Toolbar icons
-win.toolbar:AddButton("iadd.png", "add.png", "Add raid members", ButtonAddClick)
+win.toolbar:AddButton("iadd.png", "add.png", 
+	"Add current raid members", ButtonAddClick)
 win.toolbar:AddButton("idelete.png", "delete.png", "", nil)
 win.toolbar:AddButton("icalculator.png", "calculator.png", "", nil)
-win.toolbar:AddButton("process.png", "process.png", "", nil)
+win.toolbar:AddButton("iprocess.png", "process.png", 
+	"Start/Stop raid timer", ButtonTimerClick)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
@@ -116,3 +160,5 @@ table.insert(Event.Addon.SavedVariables.Load.End,
 	{onVariablesLoaded, "EPGP", "Saved vars loaded"})
 table.insert(Event.Addon.SavedVariables.Save.Begin, 
 	{onVariablesSave, "EPGP", "About to save vars"})
+table.insert(Event.System.Update.Begin, 
+	{onFrameUpdate, "EPGP", "Frame redraw event"})

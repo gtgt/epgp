@@ -7,6 +7,7 @@ EPGP data structures and calculations.
 
 -- Global EPGP Constants
 EPGP = {
+	epPerHour = 60,
 	baseGP = 100, -- Must be greater than zero
 	minEP = 500,
 }
@@ -17,7 +18,7 @@ PlayerEPGP = {
 	calling = "",
 	EP = 0,
 	realGP = 0,
-	active = false,
+	active = true,
 }
 PlayerEPGP_mt = {__index = PlayerEPGP} 
 
@@ -50,6 +51,9 @@ function PlayerEPGP:GetEP()
 end
 function PlayerEPGP:SetEP(ep)
 	self.EP = ep
+end
+function PlayerEPGP:IncEP(ep)
+	self.EP = self.EP + ep
 end
 
 -- Get current PR
