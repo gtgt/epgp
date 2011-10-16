@@ -16,6 +16,9 @@ local wkColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 local gdColour = {r = 0.0, g = 0.0, b = 0.0, a = 1.0}
 -- Default grid header colour
 local ghColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
+-- Default row selected background colour
+local gsColour = {r = 0.2, g = 0.25, b = 0.4, a = 1.0}
+
 
 -- Border width
 local bdWidth = 2
@@ -257,6 +260,22 @@ function NewGrid(parent)
 			self.headers.cols[i].headerClicked = func
 		end
 	end
+	-- Clear grid selection
+	function grid:ClearSelection()
+		for i = 1, self.numRows do
+			self.rows[i]:Deselect()
+		end
+	end
+	-- Get indexes of selected rows
+	function grid:GetSelection()
+		selection = {}
+		for i = 1, self.numRows do
+			if self.rows[i].selected then
+				table.insert(selection, i)
+			end
+		end	
+		return selection
+	end
 	-- Resize handler
 	function grid:Resize()
 		if not self.numRows or self.numRows <= 0 then return end
@@ -325,6 +344,7 @@ function NewGrid(parent)
 		-- Create the row
 		if not headers then
 			row = UI.CreateFrame("Frame", "ARow", self)
+			row.selected = false
 		else
 			row = self.headers
 		end
@@ -343,6 +363,7 @@ function NewGrid(parent)
 		end
 		row:SetHeight(self.rowHeight)
 		-- Alternate row background colour
+		row.index = (#self.rows)+1
 		c = (#self.rows % 2) / 30
 		if not headers then
 			row:SetBackgroundColor(c, c, c, gdColour.a)
@@ -390,12 +411,38 @@ function NewGrid(parent)
 		-- Row mouse event handlers
 		if not headers then
 			function row.Event:MouseIn()
-				self.r, self.g, self.b, self.a = self:GetBackgroundColor()
+				if self.selected then
+				else
+					self.r, self.g, self.b, self.a = self:GetBackgroundColor()
+				end
 				self:SetBackgroundColor(0.3, 0.3, 0.4, 0.3)
 			end
 			function row.Event:MouseOut()
-				self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+				if self.selected then
+					self:SetBackgroundColor(gsColour.r, gsColour.g, 
+						gsColour.b, gsColour.a)
+				else
+					c = (self.index % 2) / 30
+					self:SetBackgroundColor(self.r, self.g, self.b, self.a)
+				end
 			end
+			function row.Event:LeftDown()
+				if self.selected then
+					self:Deselect()
+				else
+					self:Select()
+				end
+			end
+		end
+		function row:Select()
+			self.selected = true
+			self:SetBackgroundColor(gsColour.r, gsColour.g, 
+				gsColour.b, gsColour.a)			
+		end
+		function row:Deselect()
+			self.selected = false
+			c = (self.index % 2) / 30
+			self:SetBackgroundColor(c, c, c, 1)
 		end
 		-- Set a cell's text by index
 		function row:SetText(index, text)

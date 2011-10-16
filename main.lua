@@ -67,6 +67,8 @@ end
 
 -- Grid header click event handler
 function onHeaderClicked(index)
+	-- We must clear any selection here as we don't support sorting selections
+	win.grid:ClearSelection()
 	Sort(index)
 	UpdateGrid()
 end
