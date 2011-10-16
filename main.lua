@@ -39,6 +39,33 @@ function UpdateGrid()
 	win.grid:Resize()
 end
 
+-- Sort function
+function Sort(index)
+	-- Define a comparason function for each column
+	function orderName(a, b)
+		return a.playerName < b.playerName
+	end
+	function orderEP(a, b)
+		return a:GetEP() > b:GetEP()
+	end
+	function orderGP(a, b)
+		return a:GetGP() > b:GetGP()
+	end
+	function orderPR(a, b)
+		return a:GetPR() > b:GetPR()
+	end
+	-- Put functions in column order
+	compare = {orderName, orderEP, orderGP, orderPR}
+	-- Do the sort
+	table.sort(epgp.players, compare[index])
+end
+
+-- Grid header click event handler
+function onHeaderClicked(index)
+	Sort(index)
+	UpdateGrid()
+end
+
 -- Some event handlers
 function ButtonAddClick()
 	raid = GetRaidMembers()
@@ -82,6 +109,7 @@ win.toolbar:AddButton("process.png", "process.png", "", nil)
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
 win.grid:AddRow({"Name", "EP", "GP", "PR"}, true)
+win.grid:SetHeaderCallback(onHeaderClicked)
 
 -- Global event handlers
 table.insert(Event.Addon.SavedVariables.Load.End, 

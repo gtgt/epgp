@@ -251,6 +251,13 @@ function NewGrid(parent)
 	grid.headers:SetHeight(grid.rowHeight)
 	grid.headers:SetBackgroundColor(
 		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
+	-- Column header click handling
+	function grid:SetHeaderCallback(func)
+		-- We call "func" with the index of the column header clicked
+		for i = 1, self.numCols do
+			self.headers.cols[i].headerClicked = func
+		end
+	end
 	-- Resize handler
 	function grid:Resize()
 		if not self.numRows or self.numRows <= 0 then return end
@@ -372,6 +379,14 @@ function NewGrid(parent)
 			label:SetPoint("TOPLEFT", cell, "TOPLEFT")
 			label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
 			table.insert(row.cols, cell)
+			-- Header specific mouse event handlers
+			if headers then
+				function cell.Event:LeftDown()
+					if self.headerClicked then
+						self.headerClicked(i)
+					end
+				end
+			end
 		end
 		-- Row mouse event handlers
 		if not headers then
