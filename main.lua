@@ -156,6 +156,13 @@ function onFrameUpdate()
 	end
 end
 
+-- Slash command handler
+local function slashCommand(param)
+	if param == "" then
+		win:SetVisible( not win:GetVisible() )
+	end
+end
+
 -- Toolbar icons
 win.toolbar:AddButton("iadd.png", "add.png", 
 	"Add current raid members", ButtonAddClick)
@@ -177,3 +184,5 @@ table.insert(Event.Addon.SavedVariables.Save.Begin,
 	{onVariablesSave, "EPGP", "About to save vars"})
 table.insert(Event.System.Update.Begin, 
 	{onFrameUpdate, "EPGP", "Frame redraw event"})
+table.insert (Command.Slash.Register("epgp"), 
+	{slashCommand, "EPGP", "Show/hide main window"})

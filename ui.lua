@@ -119,6 +119,11 @@ function NewWindow(description, title)
 	function win.closeicon.Event:MouseOut()
 		self:SetTexture("EPGP", "gfx/close-unfocused.png")
 	end
+	function win.closeicon.Event:LeftDown()
+		print("Closed EPGP Window, use /epgp to show it again")
+		parent = FindParent(self)
+		parent:SetVisible(false)
+	end
 	-- Resize grip
 	win.resize = UI.CreateFrame("Texture", "ResizeButton", win.back)
 	win.resize:SetTexture("EPGP", "gfx/resize-grip.png")
