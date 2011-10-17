@@ -187,13 +187,18 @@ local function slashCommand(param)
 end
 
 -- Toolbar icons
-win.toolbar:AddButton("iadd.png", "add.png", 
+win.toolbar:AddButton("addplayers.png", 
 	"Add current raid members", ButtonAddClick)
-win.toolbar:AddButton("idelete.png", "delete.png", 
+win.toolbar:AddButton("delete.png", 
 	"Delete selected players (Warning: Permanent!)", ButtonDeleteClick)
-win.toolbar:AddButton("icalculator.png", "calculator.png", "", nil)
-win.toolbar:AddButton("iprocess.png", "process.png", 
+win.toolbar:AddButton("raid.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
+win.toolbar:AddButton("addep.png", 
+	"Add some EP to selected players", nil)
+win.toolbar:AddButton("addgp.png", 
+	"Selected player purchases an item (Add GP)", nil)
+win.toolbar:AddButton("decay.png", 
+	"Calculate decay for all players", nil)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)

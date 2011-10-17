@@ -197,12 +197,14 @@ function NewWindow(description, title)
 	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, 
 		bkColour.b, bkColour.a)
 	win.toolbar.buttons = {}
-	function win.toolbar:AddButton(icon, iconhighlight, tooltip, callback)
-		but = UI.CreateFrame("Texture", "AddButton", win.toolbar)
+	-- Add a button, we assume icon is a filename that we can prefix an 
+	-- underscore to, to get the "inactive" version of the icon
+	function win.toolbar:AddButton(icon, tooltip, callback)
+		local but = UI.CreateFrame("Texture", "AddButton", win.toolbar)
 		-- Remember icons
-		but:SetTexture("EPGP", "gfx/"..icon)
-		but.activeIcon = iconhighlight
-		but.inactiveIcon = icon
+		but.activeIcon = "gfx/icons/"..icon
+		but.inactiveIcon = "gfx/icons/_"..icon
+		but:SetTexture("EPGP", but.inactiveIcon)
 		-- Remember tooltips
 		but.tooltip = tooltip
 		if #self.buttons == 0 then
@@ -220,12 +222,12 @@ function NewWindow(description, title)
 		but.Event.LeftDown = callback
 		-- Mouseover highlights
 		function but.Event:MouseIn()
-			self:SetTexture("EPGP", "gfx/"..self.activeIcon)
+			self:SetTexture("EPGP", self.activeIcon)
 			parent = FindParent(self)
 			parent:SetStatus(self.tooltip)
 		end
 		function but.Event:MouseOut()
-			self:SetTexture("EPGP", "gfx/"..self.inactiveIcon)
+			self:SetTexture("EPGP", self.inactiveIcon)
 			parent = FindParent(self)
 			parent:SetStatus("")
 		end
