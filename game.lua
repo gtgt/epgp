@@ -1,7 +1,6 @@
 --[[
-	EPGP
+	game.lua
 	Game Data Extraction
-	Jug <jug@mangband.org>
 --]]
 
 -- Class colours

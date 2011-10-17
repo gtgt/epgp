@@ -1,8 +1,9 @@
 --[[
-EPGP data structures and calculations.
-  EP = Effort Points
-  GP = Gear Points
-  PR = Loot Priority
+	epgp.lua
+	EPGP data structures and calculations.
+	EP = Effort Points
+	GP = Gear Points
+	PR = Loot Priority
 --]]
 
 -- Global EPGP Constants

@@ -1,3 +1,11 @@
+--[[
+	Chimaera EPGP
+	Raid loot allocation system.
+	Jug <jug@mangband.org>
+	
+	An implementation of the EPGP raid loot allocation system.  Based on the
+	documentation available at epgpweb.com.
+--]]
 
 -- Update frequency when raiding (in seconds)
 -- EP is adjusted at each interval.
@@ -13,6 +21,9 @@ win:SetWidth(400)
 win:SetHeight(300)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 win.timerActive = false
+
+-- Create any dialogs
+confirmDialog = ConfirmDialog(win)
 
 -- Rounding numbers
 function round(num, places)
@@ -81,6 +92,8 @@ function ButtonAddClick()
 		epgp:AddPlayer(p.name, p.calling)
 	end
 	UpdateGrid(win.grid, epgp)
+	
+	GetConfirmation("Really add players?", nil)
 end
 
 -- Start/Stop raid timer
@@ -104,6 +117,13 @@ function ButtonDeleteClick()
 	end
 	win.grid:ClearSelection()
 	UpdateGrid()
+end
+
+-- Show a confirmation dialog
+-- Pass prompt and callback to call on OK clicked
+function GetConfirmation(msg, ok)
+	confirmDialog:SetOKCallback(ok)	
+	confirmDialog:Show(msg)
 end
 
 -- Add some EP to all currently active players

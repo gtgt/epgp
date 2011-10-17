@@ -1,7 +1,6 @@
 --[[
-	EPGP GUI
-	UI Implementation
-	Jug <jug@mangband.org>
+	ui.lua
+	Main Window and grid control.
 --]]
 
 -- Default border colour
@@ -38,8 +37,33 @@ end
 
 -- Create a new window generic top level window
 function NewWindow(description, title)
-	win = UI.CreateFrame("Frame", description, context)
+	local win = UI.CreateFrame("Frame", description, context)
 	win.rootWindow = true
+	-- Function to switch to "dialog" mode window
+	function win:SetDialog()
+		self.toolbar:SetHeight(0)
+		self.statusbar:SetHeight(0)
+		self.resize:SetVisible(false)
+		self.closeicon:SetVisible(false)
+	end
+	-- Disable all window controls
+	win.disableFrame = UI.CreateFrame("Frame", "Disable", win)
+	win.disableFrame:SetPoint("TOPLEFT", win, "TOPLEFT")
+	win.disableFrame:SetPoint("BOTTOMRIGHT", win, "BOTTOMRIGHT")
+	win.disableFrame:SetBackgroundColor(0,0,0,0.5)
+	win.disableFrame:SetVisible(false)
+	win.disableFrame:SetLayer(100)
+	function win.disableFrame.Event:LeftDown()
+		-- fake
+	end
+	function win:Disable()
+		-- Create a transparent frame over the entire window which catches
+		-- mouse events.
+		self.disableFrame:SetVisible(true)
+	end
+	function win:Enable()
+		self.disableFrame:SetVisible(false)
+	end
 	-- Window border
 	win.border = UI.CreateFrame("Frame", "Border", win)
 	win.border:SetLayer(0)
@@ -465,4 +489,70 @@ function NewGrid(parent)
 	end
 	
 	return grid
+end
+
+-- Display a dialog asking for confirmation of something
+function ConfirmDialog(mainWindow)
+	local dialog = NewWindow("Confirm Dialog", "Confirm")
+	dialog.mainWindow = mainWindow
+	dialog:SetWidth(350)
+	dialog:SetHeight(120)
+	dialog:SetDialog()
+	dialog:SetLayer(200)
+	dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	canvas = dialog.workspace
+	-- Add prompt
+	prompt = UI.CreateFrame("Text", "TitleText", dialog.workspace)
+	canvas.prompt = prompt
+	prompt:SetText("")
+	prompt:SetPoint("TOPLEFT", dialog.workspace, "TOPLEFT", 10, 10)
+	prompt:SetPoint("RIGHT", dialog.workspace, "RIGHT", -10, nil)
+	prompt:SetFontSize(18)
+	prompt:SetLayer(4)
+	-- OK/cancel buttons
+	canvas.cancelbutton = UI.CreateFrame("Texture", "CancelButton", canvas)
+	canvas.cancelbutton:SetTexture("EPGP", "gfx/cancelbut.png")
+	canvas.cancelbutton:SetPoint("BOTTOMRIGHT", canvas, 
+		"BOTTOMRIGHT", -4, -4)
+	canvas.cancelbutton:ResizeToTexture()
+	canvas.cancelbutton:SetLayer(7)
+	canvas.cancelbutton.parentDialog = dialog
+	canvas.okbutton = UI.CreateFrame("Texture", "OkButton", canvas)
+	canvas.okbutton:SetTexture("EPGP", "gfx/okbut.png")
+	canvas.okbutton:SetPoint("BOTTOMRIGHT", canvas.cancelbutton, 
+		"BOTTOMLEFT", -8, 0)
+	canvas.okbutton:ResizeToTexture()
+	canvas.okbutton:SetLayer(7)
+	canvas.okbutton.parentDialog = dialog
+	dialog:SetVisible(false)
+	-- We can't actually free resources with the current API, so we make this
+	-- dialog reusable
+	function dialog:Show(msg)
+		dialog.mainWindow:Disable()
+		dialog.workspace.prompt:SetText(msg)
+		self:SetVisible(true)
+	end
+	-- Mouse handlers
+	function dialog:SetOKCallback(func)
+		self.okCallback = func
+	end
+	function dialog:SetCancelCallback(func)
+		self.cancelCallback = func
+	end
+	function dialog.workspace.okbutton.Event:LeftDown()
+		dialog.mainWindow:Enable()
+		self.parentDialog:SetVisible(false)
+		if self.parentDialog.okCallback then
+			self.parentDialog.okCallback()
+		end
+	end
+	function dialog.workspace.cancelbutton.Event:LeftDown()
+		dialog.mainWindow:Enable()
+		self.parentDialog:SetVisible(false)
+		if self.parentDialog.cancelCallback then
+			self.parentDialog.cancelCallback()
+		end
+	end
+
+	return dialog
 end
