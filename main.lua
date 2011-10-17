@@ -92,8 +92,6 @@ function ButtonAddClick()
 		epgp:AddPlayer(p.name, p.calling)
 	end
 	UpdateGrid(win.grid, epgp)
-	
-	GetConfirmation("Really add players?", nil)
 end
 
 -- Start/Stop raid timer
@@ -108,7 +106,7 @@ function ButtonTimerClick()
 end
 
 -- Delete players data
-function ButtonDeleteClick()
+function DeleteSelection()
 	nuke = win.grid:GetSelection()
 	if #nuke <= 0 then return end
 	-- delete, go backwards
@@ -117,6 +115,11 @@ function ButtonDeleteClick()
 	end
 	win.grid:ClearSelection()
 	UpdateGrid()
+end
+
+function ButtonDeleteClick()
+	GetConfirmation("Really permanently delete selected players?", 
+		DeleteSelection)
 end
 
 -- Show a confirmation dialog

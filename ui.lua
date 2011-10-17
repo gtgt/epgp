@@ -504,9 +504,10 @@ function ConfirmDialog(mainWindow)
 	-- Add prompt
 	prompt = UI.CreateFrame("Text", "TitleText", dialog.workspace)
 	canvas.prompt = prompt
+	prompt:SetWordwrap(true)
 	prompt:SetText("")
-	prompt:SetPoint("TOPLEFT", dialog.workspace, "TOPLEFT", 10, 10)
-	prompt:SetPoint("RIGHT", dialog.workspace, "RIGHT", -10, nil)
+	prompt:SetPoint("TOPLEFT", dialog.workspace, "TOPLEFT", 4, 4)
+	prompt:SetPoint("BOTTOMRIGHT", dialog.workspace, "BOTTOMRIGHT", -4, -4)
 	prompt:SetFontSize(18)
 	prompt:SetLayer(4)
 	-- OK/cancel buttons
