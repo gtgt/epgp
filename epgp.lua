@@ -34,6 +34,9 @@ end
 function PlayerEPGP:GetGP()
 	return self.realGP + EPGP.baseGP
 end
+function PlayerEPGP:GetRealGP()
+	return self.realGP
+end
 function PlayerEPGP:SetGP(gp)
 	if gp < 0 then gp = 0 end
 	self.realGP = gp
@@ -85,7 +88,8 @@ function GuildEPGP:ApplyDecay(percentage)
 	if percentage < 1 or percentage > 100 then return end 
 	-- Iterate over each player
 	for player, data in pairs(self.players) do
-		data.SetEP( data.GetEP() * ((100 - percentage) / 100) )
+		data:SetEP( data:GetEP() * ((100 - percentage) / 100) )
+		data:SetGP( data:GetRealGP() * ((100 - percentage) / 100) )
 	end
 end
 
@@ -96,7 +100,7 @@ function GuildEPGP:AddEP(ep)
 	-- Iterate over all "active" players
 	for player, data in pairs(self.players) do
 		if data.active then
-			data.SetEP(data.GetEP() + ep)
+			data:SetEP(data:GetEP() + ep)
 		end
 	end
 end

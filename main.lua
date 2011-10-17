@@ -11,6 +11,9 @@
 -- EP is adjusted at each interval.
 UpdateFreq = 10
 
+-- Decay amount (this should not be here)
+DecayAmount = 7 -- in percent
+
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
 
@@ -103,6 +106,17 @@ function ButtonTimerClick()
 	else
 		win.caption:SetText("Chimaera EPGP")
 	end
+end
+
+-- Decay data
+function DoDecay()
+	epgp:ApplyDecay(DecayAmount)
+	UpdateGrid()
+end
+
+function ButtonDecayClick()
+	GetConfirmation("Apply decay to all players in the database?",
+		DoDecay)
 end
 
 -- Delete players data
@@ -198,7 +212,7 @@ win.toolbar:AddButton("addep.png",
 win.toolbar:AddButton("addgp.png", 
 	"Selected player purchases an item (Add GP)", nil)
 win.toolbar:AddButton("decay.png", 
-	"Calculate decay for all players", nil)
+	"Calculate decay for all players", ButtonDecayClick)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
