@@ -18,7 +18,6 @@ local ghColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 -- Default row selected background colour
 local gsColour = {r = 0.1, g = 0.1, b = 0.5, a = 1.0}
 
-
 -- Border width
 local bdWidth = 2
 -- Inner border width
@@ -229,7 +228,10 @@ function NewWindow(description, title)
 		function but.Event:MouseOut()
 			self:SetTexture("EPGP", self.inactiveIcon)
 			parent = FindParent(self)
-			parent:SetStatus("")
+			local text = parent:GetStatus()
+			if text == self.tooltip then
+				parent:SetStatus("")
+			end
 		end
 	end
 	-- Statusbar
@@ -249,6 +251,9 @@ function NewWindow(description, title)
 	-- Allow setting of the status
 	function win:SetStatus(text)
 		win.statusbar.label:SetText(text)
+	end
+	function win:GetStatus()
+		return win.statusbar.label:GetText()
 	end
 	-- Workspace
 	win.workspace = UI.CreateFrame("Frame", "Workspace", win.back)
