@@ -208,9 +208,9 @@ win.toolbar:AddButton("delete.png",
 win.toolbar:AddButton("raid.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
 win.toolbar:AddButton("addep.png", 
-	"Add some EP to selected players", nil)
+	"Add Effort Points to selected players", nil)
 win.toolbar:AddButton("addgp.png", 
-	"Selected player purchases an item (Add GP)", nil)
+	"Add loot to selected player (Add GP)", nil)
 win.toolbar:AddButton("decay.png", 
 	"Calculate decay for all players", ButtonDecayClick)
 
