@@ -188,7 +188,7 @@ end
 
 -- Toolbar icons
 win.toolbar:AddButton("addplayers.png", 
-	"Add current raid members", ButtonAddClick)
+	"Import current raid members (and current target)", ButtonAddClick)
 win.toolbar:AddButton("delete.png", 
 	"Delete selected players (Warning: Permanent!)", ButtonDeleteClick)
 win.toolbar:AddButton("raid.png", 

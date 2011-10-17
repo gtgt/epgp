@@ -16,7 +16,7 @@ local gdColour = {r = 0.0, g = 0.0, b = 0.0, a = 1.0}
 -- Default grid header colour
 local ghColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 -- Default row selected background colour
-local gsColour = {r = 0.2, g = 0.25, b = 0.4, a = 1.0}
+local gsColour = {r = 0.1, g = 0.1, b = 0.5, a = 1.0}
 
 
 -- Border width
@@ -258,7 +258,7 @@ function NewWindow(description, title)
 	win.workspace:SetBackgroundColor(wkColour.r, wkColour.g, 
 		wkColour.b, wkColour.a)	
 	-- Mouse handling mode
-	win:SetMouseMasking("limited")
+	win:SetMouseMasking("full")
 	return win
 end
 
