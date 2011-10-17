@@ -19,6 +19,11 @@ function GetRaidMembers()
 	if me then
 		table.insert(raid, {["name"] = me.name, ["calling"] = me.calling})
 	end
+	-- The current players target becomes a member
+	target = Inspect.Unit.Detail("player.target")
+	if target and target.player then
+		table.insert(raid, {["name"] = target.name, ["calling"] = target.calling})
+	end
 	-- Grab all other group members
 	units = Inspect.Unit.List()
 	for id,specifier in pairs(units) do
