@@ -12,7 +12,7 @@ ClassColours = {
 }
 
 -- Return all players in the current raid/group
-function GetRaidMembers()
+function GetRaidMembers(includeTarget)
 	raid = {}
 	-- The current player is always a member
 	me = Inspect.Unit.Detail("player")
@@ -20,9 +20,12 @@ function GetRaidMembers()
 		table.insert(raid, {["name"] = me.name, ["calling"] = me.calling})
 	end
 	-- The current players target becomes a member
-	target = Inspect.Unit.Detail("player.target")
-	if target and target.player then
-		table.insert(raid, {["name"] = target.name, ["calling"] = target.calling})
+	if includeTarget then 
+		target = Inspect.Unit.Detail("player.target")
+		if target and target.player then
+			table.insert(raid, {["name"] = target.name, 
+				["calling"] = target.calling})
+		end
 	end
 	-- Grab all other group members
 	units = Inspect.Unit.List()

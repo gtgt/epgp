@@ -37,7 +37,8 @@ end
 -- Update our grid with the EPGP data
 function UpdateGrid()
 	win.grid:Clear()
-	nump = epgp:GetNumPlayers()
+	-- Get player list
+	nump = #epgp.players
 	numr = win.grid.numRows
 	while numr < nump do
 		win.grid:AddRow({"","0","0","0"}, false)
@@ -46,6 +47,7 @@ function UpdateGrid()
 	-- Add all the player data to the grid
 	for i = 1, nump do
 		player = epgp.players[i]
+		-- Skip inactive players if we're raiding
 		row = win.grid.rows[i]
 		row:SetText(1, player.playerName)
 		if player.calling then
@@ -57,10 +59,14 @@ function UpdateGrid()
 		for j = 2, 4 do
 			row:SetTextColour(j, {r=1, g=1, b=1, a=1})
 		end
-		-- Fade "standby" players
+		-- Fade/highlight "standby" players
 		if player.standby then
-			for j = 1, 4 do
-				row:SetTextColour(j, {r=0.2, g=0.2, b=0.2, a=1})
+			for j = 2, 4 do
+				if win.timerActive then
+					row:SetTextColour(j, {r=0.2, g=0.2, b=0.2, a=1})
+				else
+					row:SetTextColour(j, {r=0.0, g=0.6, b=0.0, a=1})
+				end
 			end
 		end
 	end
@@ -98,7 +104,7 @@ end
 
 -- Some event handlers
 function ButtonAddClick()
-	raid = GetRaidMembers()
+	raid = GetRaidMembers(true)
 	-- Add players to guild epgp data
 	for _, p in pairs(raid) do
 		epgp:AddPlayer(p.name, p.calling)
@@ -108,12 +114,35 @@ end
 
 -- Start/Stop raid timer
 function ButtonTimerClick()
+	-- Start/stop raiding
 	win.timerActive = not win.timerActive
 	if win.timerActive then
 		win.lastFrameTime = Inspect.Time.Real()
 		win.caption:SetText("Chimaera EPGP [Raid Active]")
+		-- Determine who is active and mark them
+		UpdateActive()
 	else
 		win.caption:SetText("Chimaera EPGP")
+	end
+	epgp:SetRaidStatus(win.timerActive)
+	UpdateGrid()
+end
+
+-- Determine who is active/standby and update the database status
+function UpdateActive()
+	active = GetRaidMembers(false)
+	-- Iterate all players in the database, set active if they are in 
+	-- our "active" list
+	for i = 1, #epgp.players do
+		player = epgp.players[i].playerName
+		epgp.players[i].active = false
+		-- Brute force search, there aren't too many...
+		for j = 1, #active do
+			if player == active[j].name then
+				epgp.players[i].active = true
+				break
+			end
+		end
 	end
 end
 
@@ -217,9 +246,7 @@ function IncrementRaidEP()
 	ep = (EPGP.epPerHour / 3600) * UpdateFreq
 	-- Add this to all active players
 	for _, p in ipairs(epgp.players) do
-		if p.active then
-			p:IncEP(ep)
-		end
+		p:IncEP(ep)
 	end
 	UpdateGrid()
 end

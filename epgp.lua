@@ -19,7 +19,7 @@ PlayerEPGP = {
 	calling = "",
 	EP = 0,
 	realGP = 0,
-	active = true,
+	active = false,
 	standby = false,
 }
 PlayerEPGP_mt = {__index = PlayerEPGP} 
@@ -139,4 +139,26 @@ end
 -- Get the number of players in the dataset
 function GuildEPGP:GetNumPlayers()
 	return #self.players
+end
+
+-- Set raiding status, this hide inactive players from our database
+function GuildEPGP:SetRaidStatus(raidstatus)
+	if raidstatus then
+		local active = self:GetActivePlayers()
+		self.allPlayers = self.players
+		self.players = active
+	else
+		self.players = self.allPlayers
+	end
+end
+
+-- Return a list of all active players (including standby)
+function GuildEPGP:GetActivePlayers()
+	local active = {}
+	for i = 1, #self.players do
+		if self.players[i].active or self.players[i].standby then
+			table.insert(active, self.players[i])
+		end
+	end
+	return active
 end
