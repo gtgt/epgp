@@ -20,6 +20,7 @@ PlayerEPGP = {
 	EP = 0,
 	realGP = 0,
 	active = true,
+	standby = false,
 }
 PlayerEPGP_mt = {__index = PlayerEPGP} 
 

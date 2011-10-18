@@ -54,6 +54,15 @@ function UpdateGrid()
 		row:SetText(2, round(player:GetEP(), 1))
 		row:SetText(3, player:GetGP())
 		row:SetText(4, round(player:GetPR(),2))
+		for j = 2, 4 do
+			row:SetTextColour(j, {r=1, g=1, b=1, a=1})
+		end
+		-- Fade "standby" players
+		if player.standby then
+			for j = 1, 4 do
+				row:SetTextColour(j, {r=0.2, g=0.2, b=0.2, a=1})
+			end
+		end
 	end
 	win.grid:Resize()
 end
@@ -117,6 +126,18 @@ end
 function ButtonDecayClick()
 	GetConfirmation("Apply decay to all players in the database?",
 		DoDecay)
+end
+
+-- Mark players as standby
+function ButtonStandbyClick()
+	standby = win.grid:GetSelection()
+	if #standby <= 0 then return end
+	-- mark as standby
+	for i = 1, #standby do
+		epgp.players[standby[i]].standby = not epgp.players[standby[i]].standby
+	end
+	win.grid:ClearSelection()
+	UpdateGrid()
 end
 
 -- Delete players data
@@ -263,6 +284,8 @@ win.toolbar:AddButton("addgp.png",
 	"Add loot to selected player (Add GP)", ButtonAddGPClick)
 win.toolbar:AddButton("decay.png", 
 	"Calculate decay for all players", ButtonDecayClick)
+win.toolbar:AddButton("standby.png", 
+	"Toggle standby status of selected players", ButtonStandbyClick)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
