@@ -141,6 +141,11 @@ function ButtonAddEPClick()
 		DoAddEP)
 end
 
+function ButtonAddGPClick()
+	GetEntry("Enter the number of Gear Points:",
+		DoAddGP)
+end
+
 function DoAddEP(text)
 	-- Bail out if we don't have a valid number
 	ep = tonumber(text)
@@ -152,6 +157,21 @@ function DoAddEP(text)
 	for i = 1, #add do
 		epgp.players[add[i]]:IncEP(ep)
 	end
+	UpdateGrid()	
+end
+
+function DoAddGP(text)
+	-- Bail out if we don't have a valid number
+	gp = tonumber(text)
+	if not gp then return end
+	-- Add gp to selected player
+	add = win.grid:GetSelection()
+	if #add ~= 1 then 
+		GetConfirmation("Must select only *one* player when adding GP.", nil)
+		return
+	end
+	-- Add the GP
+	epgp.players[add[1]]:IncGP(gp)
 	UpdateGrid()
 	
 end
@@ -237,7 +257,7 @@ win.toolbar:AddButton("raid.png",
 win.toolbar:AddButton("addep.png", 
 	"Add Effort Points to selected players", ButtonAddEPClick)
 win.toolbar:AddButton("addgp.png", 
-	"Add loot to selected player (Add GP)", nil)
+	"Add loot to selected player (Add GP)", ButtonAddGPClick)
 win.toolbar:AddButton("decay.png", 
 	"Calculate decay for all players", ButtonDecayClick)
 
