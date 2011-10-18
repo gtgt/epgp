@@ -205,6 +205,9 @@ end
 
 -- Saved variables have been loaded
 function onVariablesLoaded()
+	-- bail out if we don't have a config
+	if not saved_epgp then return end
+	-- load the config
 	for _, p in pairs(saved_epgp) do
 		np = epgp:AddPlayer(p.playerName, p.calling)
 		np:SetGP(tonumber(p.GP))
