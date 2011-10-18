@@ -26,7 +26,7 @@ win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 win.timerActive = false
 
 -- Create any dialogs
-confirmDialog = ConfirmDialog(win)
+promptDialog = NewDialog(win)
 
 -- Rounding numbers
 function round(num, places)
@@ -136,12 +136,39 @@ function ButtonDeleteClick()
 		DeleteSelection)
 end
 
+function ButtonAddEPClick()
+	GetEntry("Enter the number of Effort Points to add:",
+		DoAddEP)
+end
+
+function DoAddEP(text)
+	-- Bail out if we don't have a valid number
+	ep = tonumber(text)
+	if not ep then return end
+	-- Add ep to all selected players
+	add = win.grid:GetSelection()
+	if #add <= 0 then return end
+	-- Add the EP
+	for i = 1, #add do
+		epgp.players[add[i]]:IncEP(ep)
+	end
+	UpdateGrid()
+	
+end
+
 -- Show a confirmation dialog
 -- Pass prompt and callback to call on OK clicked
 function GetConfirmation(msg, ok)
-	confirmDialog:SetOKCallback(ok)	
-	confirmDialog:Show(msg)
+	promptDialog:SetOKCallback(ok)	
+	promptDialog:Confirm(msg)
 end
+
+-- Show a dialog prompting for user entry
+function GetEntry(msg, ok)
+	promptDialog:SetOKCallback(ok)	
+	promptDialog:GetEntry(msg)
+end
+
 
 -- Add some EP to all currently active players
 function IncrementRaidEP()
@@ -208,7 +235,7 @@ win.toolbar:AddButton("delete.png",
 win.toolbar:AddButton("raid.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
 win.toolbar:AddButton("addep.png", 
-	"Add Effort Points to selected players", nil)
+	"Add Effort Points to selected players", ButtonAddEPClick)
 win.toolbar:AddButton("addgp.png", 
 	"Add loot to selected player (Add GP)", nil)
 win.toolbar:AddButton("decay.png", 

@@ -23,6 +23,10 @@ local bdWidth = 2
 -- Inner border width
 local bdInsideWidth = 6
 
+-- Dialog modes
+DialogConfirm = 1
+DialogEdit = 2
+
 local context = UI.CreateContext("EPGP")
 
 -- Find our ultimate parent window
@@ -499,23 +503,23 @@ function NewGrid(parent)
 end
 
 -- Display a dialog asking for confirmation of something
-function ConfirmDialog(mainWindow)
+function NewDialog(mainWindow)
 	local dialog = NewWindow("Confirm Dialog", "Confirm")
 	dialog.mainWindow = mainWindow
 	dialog:SetWidth(350)
-	dialog:SetHeight(120)
+	dialog:SetHeight(160)
 	dialog:SetDialog()
 	dialog:SetLayer(200)
 	dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 	canvas = dialog.workspace
 	-- Add prompt
-	prompt = UI.CreateFrame("Text", "TitleText", dialog.workspace)
+	prompt = UI.CreateFrame("Text", "TitleText", canvas)
 	canvas.prompt = prompt
 	prompt:SetWordwrap(true)
 	prompt:SetText("")
 	prompt:SetPoint("TOPLEFT", dialog.workspace, "TOPLEFT", 4, 4)
-	prompt:SetPoint("BOTTOMRIGHT", dialog.workspace, "BOTTOMRIGHT", -4, -4)
 	prompt:SetFontSize(18)
+	prompt:SetWidth( canvas:GetWidth() -8 )
 	prompt:SetLayer(4)
 	-- OK/cancel buttons
 	canvas.cancelbutton = UI.CreateFrame("Texture", "CancelButton", canvas)
@@ -533,12 +537,30 @@ function ConfirmDialog(mainWindow)
 	canvas.okbutton:SetLayer(7)
 	canvas.okbutton.parentDialog = dialog
 	dialog:SetVisible(false)
+	-- Text entry
+	canvas.edit = UI.CreateFrame("RiftTextfield", "TextEntry", canvas)
+	canvas.edit:SetPoint("TOPCENTER", canvas.prompt, "BOTTOMCENTER")
+	canvas.edit:SetLayer(8)
+	canvas.edit:SetBackgroundColor(0.2,0.2,0.2,1)
 	-- We can't actually free resources with the current API, so we make this
 	-- dialog reusable
-	function dialog:Show(msg)
-		dialog.mainWindow:Disable()
-		dialog.workspace.prompt:SetText(msg)
+	function dialog:Confirm(msg)
+		self.mainWindow:Disable()
+		self.mode = DialogConfirm
+		self.workspace.prompt:SetText(msg)
+		self.workspace.edit:SetVisible(false)
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
 		self:SetVisible(true)
+	end
+	-- Dialog mode which prompts for text entry
+	function dialog:GetEntry(msg)
+		self.mainWindow:Disable()
+		self.mode = DialogEdit
+		self.workspace.prompt:SetText(msg)
+		self.workspace.edit:SetVisible(true)
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
+		self:SetVisible(true)
+		self.workspace.edit:SetKeyFocus(true)		
 	end
 	-- Mouse handlers
 	function dialog:SetOKCallback(func)
@@ -548,14 +570,24 @@ function ConfirmDialog(mainWindow)
 		self.cancelCallback = func
 	end
 	function dialog.workspace.okbutton.Event:LeftDown()
-		dialog.mainWindow:Enable()
+		-- prevent focus stealing
+		self.parentDialog.workspace.edit:SetKeyFocus(false)
+		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
 		if self.parentDialog.okCallback then
-			self.parentDialog.okCallback()
+			if self.parentDialog.mode == DialogConfirm then
+				self.parentDialog.okCallback()
+			else
+				entry = self.parentDialog.workspace.edit:GetText()
+				if not entry then entry = "" end
+				self.parentDialog.okCallback(entry)
+			end
 		end
 	end
 	function dialog.workspace.cancelbutton.Event:LeftDown()
-		dialog.mainWindow:Enable()
+		-- prevent focus stealing
+		self.parentDialog.workspace.edit:SetKeyFocus(false)
+		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
 		if self.parentDialog.cancelCallback then
 			self.parentDialog.cancelCallback()
