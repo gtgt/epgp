@@ -181,9 +181,15 @@ function NewWindow(description, title)
 			m = Inspect.Mouse()
 			x = m.x - self.x
 			y = m.y - self.y
-			if y > 60 then
+			if y > 140 then
 				w = FindParent(self)
 				if not w.minWidth then w.minWidth = 0 end
+				-- XXX Hack, never resize smaller than our toolbar
+				local toolbarWidth = ((#w.toolbar.buttons) * 32) + 16
+				if w.minWidth < toolbarWidth then 
+					w.minWidth = toolbarWidth 
+				end
+				-- Limit min window size
 				if x > w.minWidth then
 					w:SetWidth(x)
 				end
@@ -318,7 +324,7 @@ function NewGrid(parent)
 	end
 	-- Resize handler
 	function grid:Resize()
-		if not self.numRows or self.numRows <= 0 then return end
+		--if not self.numRows or self.numRows <= 0 and then return end
 		-- Adjust width of our columns, first find min widths
 		widths = {}
 		for i = 1, self.numCols do table.insert(widths, 0) end
