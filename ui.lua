@@ -325,6 +325,7 @@ function NewGrid(parent)
 		for i, row in pairs(self.rows) do
 			for j = 1, self.numCols do
 				wid = row.cols[j].label:GetFullWidth()
+				if j == 1 then wid = wid + 13 end -- XXX Hack
 				if wid > widths[j] then
 					widths[j] = wid
 				end
