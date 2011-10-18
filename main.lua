@@ -17,6 +17,11 @@ DecayAmount = 7 -- in percent
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
 
+-- Our grid status icons
+StatusGreen = "gfx/icons/status_green.png"
+StatusAmber = "gfx/icons/status_orange.png"
+StatusRed = "gfx/icons/status_red.png"
+
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
 win:SetVisible(true)
@@ -47,7 +52,6 @@ function UpdateGrid()
 	-- Add all the player data to the grid
 	for i = 1, nump do
 		player = epgp.players[i]
-		-- Skip inactive players if we're raiding
 		row = win.grid.rows[i]
 		row:SetText(1, player.playerName)
 		if player.calling then
@@ -59,15 +63,13 @@ function UpdateGrid()
 		for j = 2, 4 do
 			row:SetTextColour(j, {r=1, g=1, b=1, a=1})
 		end
-		-- Fade/highlight "standby" players
+		-- Set status icon
 		if player.standby then
-			for j = 2, 4 do
-				if win.timerActive then
-					row:SetTextColour(j, {r=0.2, g=0.2, b=0.2, a=1})
-				else
-					row:SetTextColour(j, {r=0.0, g=0.6, b=0.0, a=1})
-				end
-			end
+			row:SetIcon(StatusAmber)
+		elseif player.active then
+			row:SetIcon(StatusGreen)
+		else
+			row:SetIcon(StatusRed)
 		end
 	end
 	win.grid:Resize()

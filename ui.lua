@@ -371,6 +371,7 @@ function NewGrid(parent)
 	-- Clear all contents (not the actual row UI elements)
 	function grid:Clear()
 		for _, row in pairs(self.rows) do
+			row:SetIcon(nil)
 			for i = 1, #row.cols do
 				row:SetText(i, "")
 			end
@@ -429,15 +430,30 @@ function NewGrid(parent)
 				cell:SetPoint("BOTTOM", row, "BOTTOM")							
 			end
 			cell:SetWidth(row:GetWidth() / self.numCols)
+			-- Add a status indicator to the first cell
 			align = cell
+			if i == 1 and not headers then
+				cell.status = UI.CreateFrame("Texture", "Status", cell)
+				cell.status:SetTexture("EPGP", "gfx/icons/status_red.png")
+				cell.status:ResizeToTexture()
+				cell.status:SetPoint("TOPLEFT", cell, "TOPLEFT", 4, 6)
+				cell.status:SetLayer(9)	
+			end
 			-- Add a label to the cell
 			label = UI.CreateFrame("Text", "ALabel", cell)
 			cell.label = label
 			label:SetText(rowdata[i])
 			label:SetFontSize(16)
 			--label:SetFont("EPGP", "font/DejaVuSans.ttf")
-			label:SetPoint("TOPLEFT", cell, "TOPLEFT")
-			label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
+			if i == 1 and not headers then 
+				-- anchor to status
+				label:SetPoint("TOPLEFT", cell.status, "TOPRIGHT", 0, -4)
+				label:SetPoint("RIGHT", cell, "RIGHT")
+			else
+				-- anchor to cell
+				label:SetPoint("TOPLEFT", cell, "TOPLEFT")
+				label:SetPoint("BOTTOMRIGHT", cell, "BOTTOMRIGHT")
+			end
 			table.insert(row.cols, cell)
 			-- Header specific mouse event handlers
 			if headers then
@@ -483,6 +499,12 @@ function NewGrid(parent)
 			self.selected = false
 			c = (self.index % 2) / 30
 			self:SetBackgroundColor(c, c, c, 1)
+		end
+		-- Set a rows icon
+		function row:SetIcon(texture)
+			-- XXX Hack
+			if not texture then texture = "gfx/icons/status_none.png" end
+			self.cols[1].status:SetTexture("EPGP", texture)
 		end
 		-- Set a cell's text by index
 		function row:SetText(index, text)
