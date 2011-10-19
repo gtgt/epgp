@@ -22,6 +22,9 @@ StatusGreen = "gfx/icons/status_green.png"
 StatusAmber = "gfx/icons/status_orange.png"
 StatusRed = "gfx/icons/status_red.png"
 
+-- Remember our sort order
+LastSort = nil
+
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
 win:SetVisible(true)
@@ -43,6 +46,7 @@ end
 function UpdateGrid()
 	win.grid:Clear()
 	local players = nil
+	-- Only display active players if we're raiding
 	if win.timerActive then
 		players = epgp:GetActivePlayers()
 	else
@@ -83,6 +87,13 @@ end
 
 -- Sort function
 function Sort(index)
+	-- We must clear any selection here as we don't support sorting selections
+	win.grid:ClearSelection()
+	if not index then
+		index = LastSort
+	else
+		LastSort = index
+	end
 	-- Define a comparason function for each column
 	function orderName(a, b)
 		return a.playerName < b.playerName
@@ -100,14 +111,12 @@ function Sort(index)
 	compare = {orderName, orderEP, orderGP, orderPR}
 	-- Do the sort
 	table.sort(epgp.players, compare[index])
+	UpdateGrid()
 end
 
 -- Grid header click event handler
 function onHeaderClicked(index)
-	-- We must clear any selection here as we don't support sorting selections
-	win.grid:ClearSelection()
 	Sort(index)
-	UpdateGrid()
 end
 
 -- Some event handlers
@@ -218,7 +227,7 @@ function DoAddEP(text)
 			p:IncEP(ep)
 		end
 	end
-	UpdateGrid()	
+	Sort()	
 end
 
 function DoAddGP(text)
@@ -236,7 +245,7 @@ function DoAddGP(text)
 	if p then
 		p:IncGP(gp)
 	end
-	UpdateGrid()
+	Sort()
 	
 end
 
