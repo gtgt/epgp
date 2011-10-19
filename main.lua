@@ -23,7 +23,7 @@ StatusAmber = "gfx/icons/status_orange.png"
 StatusRed = "gfx/icons/status_red.png"
 
 -- Remember our sort order
-LastSort = nil
+LastSort = 4 -- also default sort order
 
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
