@@ -312,12 +312,17 @@ function NewGrid(parent)
 			self.rows[i]:Deselect()
 		end
 	end
-	-- Get indexes of selected rows
-	function grid:GetSelection()
+	-- Get indexes of selected rows or contents of first cell
+	function grid:GetSelection(names)
 		selection = {}
 		for i = 1, self.numRows do
 			if self.rows[i].selected then
-				table.insert(selection, i)
+				if names then
+					table.insert(selection, 
+						self.rows[i].cols[1].label:GetText())
+				else
+					table.insert(selection, i)
+				end
 			end
 		end	
 		return selection

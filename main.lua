@@ -42,8 +42,14 @@ end
 -- Update our grid with the EPGP data
 function UpdateGrid()
 	win.grid:Clear()
+	local players = nil
+	if win.timerActive then
+		players = epgp:GetActivePlayers()
+	else
+		players = epgp.players
+	end
 	-- Get player list
-	nump = #epgp.players
+	nump = #players
 	numr = win.grid.numRows
 	while numr < nump do
 		win.grid:AddRow({"","0","0","0"}, false)
@@ -51,7 +57,7 @@ function UpdateGrid()
 	end
 	-- Add all the player data to the grid
 	for i = 1, nump do
-		player = epgp.players[i]
+		player = players[i]
 		row = win.grid.rows[i]
 		row:SetText(1, player.playerName)
 		if player.calling then
@@ -116,6 +122,7 @@ end
 
 -- Start/Stop raid timer
 function ButtonTimerClick()
+	win.grid:ClearSelection()
 	-- Start/stop raiding
 	win.timerActive = not win.timerActive
 	if win.timerActive then
@@ -126,7 +133,6 @@ function ButtonTimerClick()
 	else
 		win.caption:SetText("Chimaera EPGP")
 	end
-	epgp:SetRaidStatus(win.timerActive)
 	UpdateGrid()
 end
 
@@ -161,11 +167,11 @@ end
 
 -- Mark players as standby
 function ButtonStandbyClick()
-	standby = win.grid:GetSelection()
+	standby = win.grid:GetSelection(true)
 	if #standby <= 0 then return end
 	-- mark as standby
 	for i = 1, #standby do
-		epgp.players[standby[i]].standby = not epgp.players[standby[i]].standby
+		epgp:SetStandbyStatus(standby[i], not epgp:GetStandbyStatus(standby[i]))
 	end
 	win.grid:ClearSelection()
 	UpdateGrid()
@@ -173,11 +179,11 @@ end
 
 -- Delete players data
 function DeleteSelection()
-	nuke = win.grid:GetSelection()
+	nuke = win.grid:GetSelection(true)
 	if #nuke <= 0 then return end
-	-- delete, go backwards
-	for i = #nuke, 1, -1 do
-		table.remove(epgp.players, nuke[i])
+	-- delete
+	for i = 1, #nuke do
+		epgp:DeletePlayer(nuke[i])
 	end
 	win.grid:ClearSelection()
 	UpdateGrid()
@@ -203,11 +209,14 @@ function DoAddEP(text)
 	ep = tonumber(text)
 	if not ep then return end
 	-- Add ep to all selected players
-	add = win.grid:GetSelection()
+	add = win.grid:GetSelection(true)
 	if #add <= 0 then return end
 	-- Add the EP
 	for i = 1, #add do
-		epgp.players[add[i]]:IncEP(ep)
+		p = epgp:GetPlayer(add[i])
+		if p then
+			p:IncEP(ep)
+		end
 	end
 	UpdateGrid()	
 end
@@ -217,13 +226,16 @@ function DoAddGP(text)
 	gp = tonumber(text)
 	if not gp then return end
 	-- Add gp to selected player
-	add = win.grid:GetSelection()
+	add = win.grid:GetSelection(true)
 	if #add ~= 1 then 
 		GetConfirmation("Must select only *one* player when adding GP.", nil)
 		return
 	end
 	-- Add the GP
-	epgp.players[add[1]]:IncGP(gp)
+	p = epgp:GetPlayer(add[1])
+	if p then
+		p:IncGP(gp)
+	end
 	UpdateGrid()
 	
 end
@@ -246,8 +258,10 @@ end
 function IncrementRaidEP()
 	-- Work out the amount of EP per interval
 	ep = (EPGP.epPerHour / 3600) * UpdateFreq
+	-- Get all active players
+	active = epgp:GetActivePlayers()
 	-- Add this to all active players
-	for _, p in ipairs(epgp.players) do
+	for _, p in ipairs(active) do
 		p:IncEP(ep)
 	end
 	UpdateGrid()

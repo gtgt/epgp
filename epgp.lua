@@ -94,29 +94,6 @@ function GuildEPGP:ApplyDecay(percentage)
 	end
 end
 
--- Add some EP across all currently active players
-function GuildEPGP:AddEP(ep)
-	-- Sanity
-	if ep < 0 then return end
-	-- Iterate over all "active" players
-	for player, data in pairs(self.players) do
-		if data.active then
-			data:SetEP(data:GetEP() + ep)
-		end
-	end
-end
-
--- Add GP to a specific player
-function GuildEPGP:AddGP(player, gp)
-	-- Sanity
-	if not player then return end
-	-- Add GP
-	p = self.players.player
-	if p then
-		p.IncGP(gp)
-	end
-end
-
 -- Add a new player to the dataset and return the new player data
 function GuildEPGP:AddPlayer(playername, calling)
 	p = PlayerEPGP:Create()
@@ -136,20 +113,56 @@ function GuildEPGP:AddPlayer(playername, calling)
 	return p
 end
 
--- Get the number of players in the dataset
-function GuildEPGP:GetNumPlayers()
-	return #self.players
+-- Find and return a player from our database
+function GuildEPGP:GetPlayer(name)
+	-- Crapy brute force search
+	result = nil
+	for i = 1, #self.players do
+		if self.players[i].playerName == name then
+			result = self.players[i]
+			break
+		end
+	end
+	return result
 end
 
--- Set raiding status, this hide inactive players from our database
-function GuildEPGP:SetRaidStatus(raidstatus)
-	if raidstatus then
-		local active = self:GetActivePlayers()
-		self.allPlayers = self.players
-		self.players = active
-	else
-		self.players = self.allPlayers
+-- Get/Set a players standby status by name
+function GuildEPGP:SetStandbyStatus(playername, standby)
+	p = self:GetPlayer(playername)
+	if p then
+		p.standby = standby
 	end
+end
+function GuildEPGP:GetStandbyStatus(playername)
+	result = nil
+	p = self:GetPlayer(playername)
+	if p then
+		result = p.standby
+	end
+	return result
+end
+
+-- Set a players active status by name
+function GuildEPGP:SetActiveStatus(playername, active)
+	p = self:GetPlayer(playername)
+	if p then
+		p.active = active
+	end
+end
+
+-- Delete player by name
+function GuildEPGP:DeletePlayer(playername)
+	for i = 1, #self.players do
+		if self.players[i].playerName == playername then
+			table.remove(self.players, i)
+			break
+		end
+	end
+end
+
+-- Get the number of players in the database
+function GuildEPGP:GetNumPlayers()
+	return #self.players
 end
 
 -- Return a list of all active players (including standby)
