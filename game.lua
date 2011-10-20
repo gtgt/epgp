@@ -8,7 +8,8 @@ ClassColours = {
 	["mage"] = {r = 0.41, g = 0.29, b = 0.52},
 	["cleric"] = {r = 0.41, g = 0.65, b = 0.25},
 	["rogue"] = {r = 0.89, g = 0.80, b = 0.40},
-	["warrior"] = {r = 0.58, g = 0.17, b = 0.16}
+	["warrior"] = {r = 0.58, g = 0.17, b = 0.16},
+	[""] = {r = 1, g = 1, b = 1},
 }
 
 -- Return all players in the current raid/group

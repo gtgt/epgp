@@ -101,8 +101,10 @@ function GuildEPGP:AddPlayer(playername, calling)
 	p.calling = calling
 	-- Don't add players already in the dataset
 	new = true
-	for _, player in pairs(self.players) do
+	for i, player in pairs(self.players) do
 		if player.playerName == playername then
+			-- Do update the calling, in case we only just learnt it
+			self.players[i].calling = calling
 			new = false
 			break
 		end

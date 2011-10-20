@@ -320,10 +320,30 @@ function onFrameUpdate()
 	end
 end
 
--- Slash command handler
+-- Detailed slash command handler
+local function ProcessCommand(args)
+	if args[1] == "add" then
+		if #args >= 2 then
+			-- Import the player, we don't know their calling yet
+			epgp:AddPlayer(args[2], "")
+			UpdateGrid()
+			Sort()
+		end
+	end
+end
+
+-- Base Slash command handler
 local function slashCommand(param)
 	if param == "" then
 		win:SetVisible( not win:GetVisible() )
+	else
+		local parts = {}
+		for w in param:gmatch("%w+") do
+			table.insert(parts, w)
+		end
+		if #parts >= 1 then
+			ProcessCommand(parts)
+		end
 	end
 end
 
