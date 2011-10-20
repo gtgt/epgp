@@ -9,7 +9,7 @@
 
 -- Update frequency when raiding (in seconds)
 -- EP is adjusted at each interval.
-UpdateFreq = 10
+UpdateFreq = 60*5
 
 -- Decay amount (this should not be here)
 DecayAmount = 7 -- in percent
