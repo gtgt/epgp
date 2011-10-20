@@ -27,18 +27,13 @@ function GetRaidMembers(includeTarget)
 				["calling"] = target.calling})
 		end
 	end
-	-- Grab all other group members
-	units = Inspect.Unit.List()
-	for id,specifier in pairs(units) do
-		-- Get further detail on group specifiers
-		group = string.match(specifier, "group(%d+)$")
-		if group then
-			member = Inspect.Unit.Detail(specifier)
-			if member then
-				-- We have a group member
-				p = { ["name"] = member.name, ["calling"] = member.calling }
-				table.insert(raid, p)
-			end
+	-- Brute force search all group specifiers
+	for i = 1, 20 do
+		unit = Inspect.Unit.Detail(string.format("group%02d", i))
+		if unit then
+			-- We have a group member
+			p = { ["name"] = unit.name, ["calling"] = unit.calling }
+			table.insert(raid, p)
 		end
 	end
 	return raid
