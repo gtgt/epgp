@@ -367,6 +367,12 @@ function NewGrid(parent)
 		for i = 1, self.numRows do
 			self.rows[i]:SetVisible(i < maxrows)
 		end
+		-- Hide any rows at the bottom which are not used
+		for i = self.numRows, 1, -1 do
+			if self.rows[i].cols[1].label:GetText() == "" then
+				self.rows[i]:SetVisible(false)
+			end
+		end
 		-- Limit minimum width to avoid columns hanging off edge
 		-- XXX This is a pathetic hack
 		minwidth = 0
