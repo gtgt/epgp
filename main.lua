@@ -141,6 +141,10 @@ function ButtonTimerClick()
 		UpdateActive()
 	else
 		win.caption:SetText("Chimaera EPGP")
+		-- Coming out of raid mode, clear all "active" flags
+		for i = 1, #epgp.players do
+			epgp.players[i].active = false
+		end		
 	end
 	UpdateGrid()
 end
