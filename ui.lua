@@ -18,6 +18,18 @@ local ghColour = {r = 0.25, g = 0.25, b = 0.25, a = 1.0}
 -- Default row selected background colour
 local gsColour = {r = 0.1, g = 0.1, b = 0.5, a = 1.0}
 
+-- Window title font
+fontWindowTitle = 16
+fontStatusBar = 14
+fontGrid = 14
+
+-- Heights
+heightTitleBar = 24
+heightToolbar = 32
+heightBar = 28
+heightGridRow = 22
+heightStatusBar = 28
+
 -- Border width
 local bdWidth = 2
 -- Inner border width
@@ -96,7 +108,7 @@ function NewWindow(description, title)
 	win.titlebar:SetLayer(3)
 	win.titlebar:SetPoint("TOPLEFT", win.back, "TOPLEFT")
 	win.titlebar:SetPoint("TOPRIGHT", win.back, "TOPRIGHT")
-	win.titlebar:SetHeight(26)
+	win.titlebar:SetHeight(heightTitleBar)
 	win.titlebar:SetBackgroundColor(bdInsideColour.r, bdInsideColour.g, 
 		bdInsideColour.b, bdInsideColour.a)
 	function win.titlebar.Event:LeftDown()
@@ -131,7 +143,7 @@ function NewWindow(description, title)
 	win.caption:SetText(title)
 	win.caption:SetPoint("TOPLEFT", win.titlebar, "TOPLEFT", 4, -2)
 	win.caption:SetPoint("RIGHT", win.titlebar, "RIGHT")
-	win.caption:SetFontSize(18)
+	win.caption:SetFontSize(fontWindowTitle)
 	win.caption:SetLayer(4)
 	-- Close icon
 	win.closeicon = UI.CreateFrame("Texture", "CloseButton", win.titlebar)
@@ -202,7 +214,7 @@ function NewWindow(description, title)
 	win.toolbar:SetLayer(6)
 	win.toolbar:SetPoint("TOPLEFT", win.titlebar, "BOTTOMLEFT")
 	win.toolbar:SetPoint("TOPRIGHT", win.titlebar, "BOTTOMRIGHT")
-	win.toolbar:SetHeight(32)
+	win.toolbar:SetHeight(heightToolbar)
 	win.toolbar:SetBackgroundColor(bkColour.r, bkColour.g, 
 		bkColour.b, bkColour.a)
 	win.toolbar.buttons = {}
@@ -249,14 +261,14 @@ function NewWindow(description, title)
 	win.statusbar:SetLayer(6)
 	win.statusbar:SetPoint("BOTTOMLEFT", win.back, "BOTTOMLEFT")
 	win.statusbar:SetPoint("BOTTOMRIGHT", win.back, "BOTTOMRIGHT")
-	win.statusbar:SetHeight(32)
+	win.statusbar:SetHeight(heightStatusBar)
 	win.statusbar:SetBackgroundColor(bkColour.r, bkColour.g, 
 		bkColour.b, bkColour.a)
 	win.statusbar.label = UI.CreateFrame("Text", "Status", win.statusbar)
 	win.statusbar.label:SetText("")
 	win.statusbar.label:SetPoint("TOPLEFT", win.statusbar, "TOPLEFT", 8, 0)
 	win.statusbar.label:SetPoint("BOTTOMRIGHT", win.statusbar, "BOTTOMRIGHT")
-	win.statusbar.label:SetFontSize(14)
+	win.statusbar.label:SetFontSize(fontStatusBar)
 	win.caption:SetLayer(9)
 	-- Allow setting of the status
 	function win:SetStatus(text)
@@ -284,7 +296,7 @@ function NewGrid(parent)
 	-- Our properties
 	grid.numCols = 0
 	grid.numRows = 0
-	grid.rowHeight = 26
+	grid.rowHeight = heightGridRow
 	-- Internal properties
 	grid.rows = {}
 	-- position within our parent
@@ -454,14 +466,14 @@ function NewGrid(parent)
 				cell.status = UI.CreateFrame("Texture", "Status", cell)
 				cell.status:SetTexture("EPGP", "gfx/icons/status_red.png")
 				cell.status:ResizeToTexture()
-				cell.status:SetPoint("TOPLEFT", cell, "TOPLEFT", 4, 6)
+				cell.status:SetPoint("TOPLEFT", cell, "TOPLEFT", 4, 4)
 				cell.status:SetLayer(9)	
 			end
 			-- Add a label to the cell
 			label = UI.CreateFrame("Text", "ALabel", cell)
 			cell.label = label
 			label:SetText(rowdata[i])
-			label:SetFontSize(16)
+			label:SetFontSize(fontGrid)
 			--label:SetFont("EPGP", "font/DejaVuSans.ttf")
 			if i == 1 and not headers then 
 				-- anchor to status
