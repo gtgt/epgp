@@ -17,6 +17,9 @@ DecayAmount = 7 -- in percent
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
 
+-- Our configuration options
+settings = nil
+
 -- Our grid status icons
 StatusGreen = "gfx/icons/status_green.png"
 StatusAmber = "gfx/icons/status_orange.png"
@@ -27,7 +30,6 @@ LastSort = 4 -- also default sort order
 
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
-win:SetVisible(true)
 win:SetWidth(400)
 win:SetHeight(300)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
@@ -281,7 +283,8 @@ function IncrementRaidEP()
 end
 
 -- Saved variables have been loaded
-function onVariablesLoaded()
+function onVariablesLoaded(id)
+	if id ~= "EPGP" then return end
 	-- bail out if we don't have a config
 	if not saved_epgp then return end
 	-- load the config
@@ -290,7 +293,19 @@ function onVariablesLoaded()
 		np:SetGP(tonumber(p.GP))
 		np:SetEP(tonumber(p.EP))
 	end
-	UpdateGrid()	
+	-- Other settings
+	if not saved_config then
+		-- Go for defaults
+		saved_config = {}
+		saved_config["visible"] = true
+	end
+	-- Apply configuration options
+	win:SetVisible(saved_config["visible"])
+	if not saved_config["visible"] then
+		print("EPGP loaded, main window is hidden, use /epgp to show it")
+	end
+
+	UpdateGrid()
 end
 
 -- About to save variables
@@ -305,6 +320,13 @@ function onVariablesSave(id)
 		player.GP = tostring(p.realGP)
 		table.insert(saved_epgp, player)
 	end
+end
+
+-- Main Window closed
+function onMainWindowClose()
+	print("Closed EPGP Window, use /epgp to show it again")
+	win:SetVisible(false)
+	saved_config["visible"] = false
 end
 
 -- Frame update event handler, used for timing
@@ -335,7 +357,9 @@ end
 -- Base Slash command handler
 local function slashCommand(param)
 	if param == "" then
-		win:SetVisible( not win:GetVisible() )
+		local visible = not win:GetVisible()
+		win:SetVisible( visible )
+		saved_config["visible"] = visible
 	else
 		local parts = {}
 		for w in param:gmatch("%w+") do
@@ -367,6 +391,8 @@ win.toolbar:AddButton("standby.png",
 win.grid = NewGrid(win.workspace, 4, 10)
 win.grid:AddRow({"Name", "EP", "GP", "PR"}, true)
 win.grid:SetHeaderCallback(onHeaderClicked)
+-- Hook close event
+win:SetCloseCallback(onMainWindowClose)
 
 -- Global event handlers
 table.insert(Event.Addon.SavedVariables.Load.End, 

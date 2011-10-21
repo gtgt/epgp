@@ -54,6 +54,7 @@ end
 function NewWindow(description, title)
 	local win = UI.CreateFrame("Frame", description, context)
 	win.rootWindow = true
+	win.onClose = nil
 	-- Function to switch to "dialog" mode window
 	function win:SetDialog()
 		self.toolbar:SetHeight(0)
@@ -159,9 +160,13 @@ function NewWindow(description, title)
 		self:SetTexture("EPGP", "gfx/close-unfocused.png")
 	end
 	function win.closeicon.Event:LeftDown()
-		print("Closed EPGP Window, use /epgp to show it again")
-		parent = FindParent(self)
-		parent:SetVisible(false)
+		p = FindParent(self)
+		if p.onClose then
+			p.onClose()
+		end
+	end
+	function win:SetCloseCallback(close)
+		self.onClose = close
 	end
 	-- Resize grip
 	win.resize = UI.CreateFrame("Texture", "ResizeButton", win.back)

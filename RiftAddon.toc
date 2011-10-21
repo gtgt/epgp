@@ -7,7 +7,9 @@ Version = "0.7.0"
 Email = "jug@mangband.org"
 Environment = "1.5"
 RunOnStartup = {"game.lua", "ui.lua", "epgp.lua", "main.lua"}
-SavedVariables = { saved_epgp = "account"
+SavedVariables = { 
+	saved_epgp = "account",
+	saved_config = "character"
 }
 Dependencies = {
 }
