@@ -25,13 +25,13 @@ GPPriceList = {
 	{"Neck / Ring", 40},
 	{"Gloves / Feet / Belt", 60},
 	{"Head / Shoulders", 60},
-	{"1 Handed / Ranged / Wand", 60},
 	{"Trinket", 75},
+	{"1 Handed / Ranged / Wand", 80},
 	{"Chest / Legs", 100},
 	{"Relic 1 Handed", 150},
 	{"Relic Ranged / Wand", 150},
-	{"2 Handed", 180},
-	{"Relic 2 Hand", 300},
+	{"2 Handed", 160},
+	{"Relic 2 Handed", 300},
 }
 
 -- Our grid status icons
