@@ -332,6 +332,12 @@ function NewGrid(parent)
 			self.rows[i]:Deselect()
 		end
 	end
+	-- Select all rows
+	function grid:SelectAll()
+		for i = 1, self.numRows do
+			self.rows[i]:Select()
+		end
+	end
 	-- Get indexes of selected rows or contents of first cell
 	function grid:GetSelection(names)
 		selection = {}

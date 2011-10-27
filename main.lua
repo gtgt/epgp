@@ -206,6 +206,19 @@ function ButtonStandbyClick()
 	UpdateGrid()
 end
 
+-- Select all/none in grid
+function ButtonSelectAllClick()
+	standby = win.grid:GetSelection(true)
+	if #standby <= 0 then
+		-- Select all
+		win.grid:SelectAll()
+	else
+		-- Select none
+		win.grid:ClearSelection()
+	end
+	UpdateGrid()
+end
+
 -- Delete players data
 function DeleteSelection()
 	nuke = win.grid:GetSelection(true)
@@ -407,6 +420,8 @@ win.toolbar:AddButton("decay.png",
 	"Calculate and apply decay for all players", ButtonDecayClick)
 win.toolbar:AddButton("standby.png", 
 	"Toggle standby status of selected players", ButtonStandbyClick)
+win.toolbar:AddButton("selectall.png", 
+	"Select all / none", ButtonSelectAllClick)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
