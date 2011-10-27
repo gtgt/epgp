@@ -22,6 +22,7 @@ local gsColour = {r = 0.1, g = 0.1, b = 0.5, a = 1.0}
 fontWindowTitle = 16
 fontStatusBar = 14
 fontGrid = 14
+fontOptionGroup = 14
 
 -- Heights
 heightTitleBar = 24
@@ -29,6 +30,7 @@ heightToolbar = 32
 heightBar = 28
 heightGridRow = 22
 heightStatusBar = 28
+radioHeight = 22
 
 -- Border width
 local bdWidth = 2
@@ -38,6 +40,7 @@ local bdInsideWidth = 6
 -- Dialog modes
 DialogConfirm = 1
 DialogEdit = 2
+DialogOption = 3
 
 local context = UI.CreateContext("EPGP")
 
@@ -606,7 +609,11 @@ function NewDialog(mainWindow)
 		self.mode = DialogConfirm
 		self.workspace.prompt:SetText(msg)
 		self.workspace.edit:SetVisible(false)
-		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetHeight(160)
+		if self.radio then
+			self.radio:SetVisible(false)
+		end
 		self:SetVisible(true)
 	end
 	-- Dialog mode which prompts for text entry
@@ -615,9 +622,34 @@ function NewDialog(mainWindow)
 		self.mode = DialogEdit
 		self.workspace.prompt:SetText(msg)
 		self.workspace.edit:SetVisible(true)
-		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetHeight(160)
+		if self.radio then
+			self.radio:SetVisible(false)
+		end
 		self:SetVisible(true)
 		self.workspace.edit:SetKeyFocus(true)		
+	end
+	-- Dialog mode which gives a list of options
+	function dialog:GetOption(msg, options)
+		self.mainWindow:Disable()
+		self.mode = DialogOption
+		self.workspace.prompt:SetText(msg)
+		self.workspace.edit:SetVisible(false)
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetVisible(true)
+		self.workspace.edit:SetKeyFocus(false)
+		if self.radio then
+			self.radio:SetVisible(false)
+			self.radio = nil -- XXX We should fee this (can't: API limitation)
+		end
+		self.radio = NewRadioGroup(self.workspace, options)
+		self.radio:SetPoint("TOPLEFT", self.workspace.prompt, "BOTTOMLEFT")
+		self.radio:SetPoint("BOTTOMRIGHT", self.workspace, "BOTTOMRIGHT")
+		self.radio:SetLayer(100)
+		local height = self.workspace.prompt:GetFullHeight()
+		height = 100 + height + (#self.radio.rows * radioHeight)
+		self:SetHeight( height )
 	end
 	-- Mouse handlers
 	function dialog:SetOKCallback(func)
@@ -628,21 +660,32 @@ function NewDialog(mainWindow)
 	end
 	function dialog.workspace.okbutton.Event:LeftDown()
 		-- prevent focus stealing
+		if self.parentDialog.radio then
+			self.parentDialog.radio.other:SetKeyFocus(false)
+		end
 		self.parentDialog.workspace.edit:SetKeyFocus(false)
 		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
 		if self.parentDialog.okCallback then
 			if self.parentDialog.mode == DialogConfirm then
 				self.parentDialog.okCallback()
-			else
+			elseif self.parentDialog.mode == DialogEdit then
 				entry = self.parentDialog.workspace.edit:GetText()
 				if not entry then entry = "" end
 				self.parentDialog.okCallback(entry)
+			elseif self.parentDialog.mode == DialogOption then
+				v = self.parentDialog.radio:GetValue()
+				if v then
+					self.parentDialog.okCallback(v)
+				end
 			end
 		end
 	end
 	function dialog.workspace.cancelbutton.Event:LeftDown()
 		-- prevent focus stealing
+		if self.parentDialog.radio then
+			self.parentDialog.radio.other:SetKeyFocus(false)
+		end
 		self.parentDialog.workspace.edit:SetKeyFocus(false)
 		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
@@ -652,4 +695,97 @@ function NewDialog(mainWindow)
 	end
 
 	return dialog
+end
+
+-- Create a new radio group
+-- Options is a table of pairs: "Label" -> "Value"
+function NewRadioGroup(parent, options)
+	-- Create our frame, we leave size and position to the creator
+	local win = UI.CreateFrame("Frame", "RadioGroup", parent)
+	win.parent = parent
+	win.rows = {}
+	win.selected = nil
+	win.value = nil
+	local align = win
+	-- Add manual entry option
+	opts = {}
+	for _, x in ipairs(options) do
+		table.insert(opts, x)
+	end
+	table.insert(opts, {"Other", nil})
+	win.options = opts
+	-- Redraw our radio group
+	function win:Redraw()
+		-- Set the radio options
+		for i, r in ipairs(self.rows) do
+			if i == self.selected then
+				r.icon:SetTexture("EPGP", "gfx/radio_on.png")
+			else
+				r.icon:SetTexture("EPGP", "gfx/radio_off.png")
+			end
+		end
+	end
+	-- Get the currently selected value
+	function win:GetValue()
+		-- Last option is always manual entry "other"
+		if self.selected == #self.options then
+			return self.other:GetText()
+		-- return the selected option's value if not "other"
+		elseif self.selected then
+			return self.options[self.selected][2]
+		end
+	end
+	-- For each option, add a radio button and a label
+	local row = nil
+	for i = 1, #opts do
+		-- Create a row for this option
+		row = UI.CreateFrame("Frame", "RadioGroup", win)
+		row.parent = win
+		if align == win then
+			row:SetPoint("TOPLEFT", win, "TOPLEFT", 0, 1)
+			row:SetPoint("RIGHT", win, "RIGHT")
+		else
+			row:SetPoint("TOPLEFT", align, "BOTTOMLEFT")
+			row:SetPoint("RIGHT", win, "RIGHT")
+		end
+		align = row
+		row:SetHeight(radioHeight)		
+		-- Create radio icon
+		local icon = UI.CreateFrame("Texture", "RadioButton", row)
+		icon:SetTexture("EPGP", "gfx/radio_off.png")
+		icon:SetPoint("TOPLEFT", row, "TOPLEFT")
+		icon:ResizeToTexture()
+		icon:SetLayer(5)
+		row.icon = icon
+		-- Create a label
+		local label = UI.CreateFrame("Text", "RadioLabel", row)
+		label:SetText(opts[i][1].." ("..tostring(opts[i][2])..")")
+		label:SetPoint("TOPLEFT", icon, "TOPRIGHT", 4, -4)
+		--label:SetPoint("RIGHT", row, "RIGHT")
+		label:SetFontSize(fontOptionGroup)
+		label:SetLayer(5)
+		row.label = label
+		-- Row mouse events
+		function row.Event:LeftDown()
+			self.parent.selected = i
+			self.parent:Redraw()
+			-- Enable/Disable the "other" text entry
+			if i == #self.parent.options then 
+				self.parent.other:SetKeyFocus(true)
+			else
+				self.parent.other:SetKeyFocus(false)
+			end
+		end
+		-- Remember the row
+		table.insert(win.rows, row)
+	end
+	-- Add the text entry to the "Other" entry
+	local txt = UI.CreateFrame("RiftTextfield", "OtherEntry", row)
+	txt:SetPoint("TOPLEFT", row.label, "TOPRIGHT", 4, 2)
+	txt:SetLayer(8)
+	txt:SetText("")
+	txt:SetBackgroundColor(0.2,0.2,0.2,1)
+	win.other = txt
+	
+	return win
 end

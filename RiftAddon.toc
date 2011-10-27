@@ -9,7 +9,7 @@ Environment = "1.5"
 RunOnStartup = {"game.lua", "ui.lua", "epgp.lua", "main.lua"}
 SavedVariables = { 
 	saved_epgp = "account",
-	saved_config = "character"
+	saved_config = "account"
 }
 Dependencies = {
 }

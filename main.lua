@@ -20,6 +20,20 @@ epgp = GuildEPGP:Create()
 -- Our configuration options
 settings = nil
 
+-- Default GP price list
+GPPriceList = {
+	{"Neck / Ring", 40},
+	{"Gloves / Feet / Belt", 60},
+	{"Head / Shoulders", 60},
+	{"1 Handed / Ranged / Wand", 60},
+	{"Trinket", 75},
+	{"Chest / Legs", 100},
+	{"Relic 1 Handed", 150},
+	{"Relic Ranged / Wand", 150},
+	{"2 Handed", 180},
+	{"Relic 2 Hand", 300},
+}
+
 -- Our grid status icons
 StatusGreen = "gfx/icons/status_green.png"
 StatusAmber = "gfx/icons/status_orange.png"
@@ -215,7 +229,7 @@ function ButtonAddEPClick()
 end
 
 function ButtonAddGPClick()
-	GetEntry("Enter the number of Gear Points:",
+	GetOption("Enter the number of Gear Points:",
 		DoAddGP)
 end
 
@@ -252,7 +266,6 @@ function DoAddGP(text)
 		p:IncGP(gp)
 	end
 	Sort()
-	
 end
 
 -- Show a confirmation dialog
@@ -268,6 +281,11 @@ function GetEntry(msg, ok)
 	promptDialog:GetEntry(msg)
 end
 
+-- Show a dialog prompting for an option selection
+function GetOption(msg, ok)
+	promptDialog:SetOKCallback(ok)	
+	promptDialog:GetOption(msg, GPPriceList)
+end
 
 -- Add some EP to all currently active players
 function IncrementRaidEP()
@@ -285,8 +303,6 @@ end
 -- Saved variables have been loaded
 function onVariablesLoaded(id)
 	if id ~= "EPGP" then return end
-	-- bail out if we don't have a config
-	if not saved_epgp then return end
 	-- load the config
 	for _, p in pairs(saved_epgp) do
 		np = epgp:AddPlayer(p.playerName, p.calling)
@@ -303,6 +319,11 @@ function onVariablesLoaded(id)
 	win:SetVisible(saved_config["visible"])
 	if not saved_config["visible"] then
 		print("EPGP loaded, main window is hidden, use /epgp to show it")
+	end
+	if saved_config["gp_prices"] then
+		GPPriceList = saved_config["gp_prices"]
+	else
+		saved_config["gp_prices"] = GPPriceList
 	end
 
 	UpdateGrid()
