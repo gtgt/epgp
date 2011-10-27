@@ -400,11 +400,11 @@ win.toolbar:AddButton("delete.png",
 win.toolbar:AddButton("raid.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
 win.toolbar:AddButton("addep.png", 
-	"Add Effort Points to selected players", ButtonAddEPClick)
+	"Add/remove Effort Points to selected players", ButtonAddEPClick)
 win.toolbar:AddButton("addgp.png", 
-	"Add loot to selected player (Add GP)", ButtonAddGPClick)
+	"Add/remove loot for selected player (Add GP)", ButtonAddGPClick)
 win.toolbar:AddButton("decay.png", 
-	"Calculate decay for all players", ButtonDecayClick)
+	"Calculate and apply decay for all players", ButtonDecayClick)
 win.toolbar:AddButton("standby.png", 
 	"Toggle standby status of selected players", ButtonStandbyClick)
 

@@ -641,7 +641,7 @@ function NewDialog(mainWindow)
 		self.workspace.edit:SetKeyFocus(false)
 		if self.radio then
 			self.radio:SetVisible(false)
-			self.radio = nil -- XXX We should fee this (can't: API limitation)
+			self.radio = nil -- XXX We should free this (can't: API limitation)
 		end
 		self.radio = NewRadioGroup(self.workspace, options)
 		self.radio:SetPoint("TOPLEFT", self.workspace.prompt, "BOTTOMLEFT")
