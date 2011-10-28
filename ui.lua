@@ -357,7 +357,7 @@ function NewGrid(parent)
 		elseif self.parent.scroll < -mx then
 			self.parent.scroll = -mx
 		end
-		if (self.parent.numRows * self.parent.rowHeight) < self.parent.scrollarea:GetHeight() then
+		if height < self.parent.scrollarea:GetHeight() then
 			self.parent.scroll = 0
 		end
 		self.parent:Resize()
@@ -477,7 +477,7 @@ function NewGrid(parent)
 		local offset = (math.abs(self.scroll) / scale) + 4
 		--maxrows = math.floor(space / self.rowHeight)
 		space = (self.scrollarea:GetHeight()-4)-offset
-		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, offset)
+		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4,offset)
 		gripHeight = (maxrows / self.numRows) * self.scrollarea:GetHeight()
 		if gripHeight > space then
 			gripHeight = space
