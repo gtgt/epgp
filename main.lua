@@ -12,7 +12,7 @@
 UpdateFreq = 60*5
 
 -- Decay amount (this should not be here)
-DecayAmount = 7 -- in percent
+DecayAmount = 10 -- in percent
 
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
