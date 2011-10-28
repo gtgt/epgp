@@ -327,12 +327,40 @@ function NewGrid(parent)
 	grid.scrollarea:SetBackgroundColor(0,0,0,1)
 	-- Scroll grip
 	grid.scrollbar = UI.CreateFrame("Frame", "ScrollBar", grid.scrollarea)
+	grid.scrollbar.parent = grid
 	grid.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, -4)
-	--grid.scrollbar:SetPoint("RIGHT",grid.scrollarea,"RIGHT", -4, 0)
 	grid.scrollbar:SetHeight(100)
 	grid.scrollbar:SetWidth(scrollBarWidth - 8)
 	grid.scrollbar:SetBackgroundColor(wkColour.r, wkColour.g, wkColour.b,
 		wkColour.a)
+	-- Scrollbar mouse handlers
+	function grid.scrollbar.Event:LeftDown()
+		-- Where are we clicked?
+		local m = Inspect.Mouse()
+		self.baseOffset = self.parent.scroll
+		self.baseY = m.y
+		-- Enable these events only when needed
+		self.Event.LeftUp = self.LeftUp
+		self.Event.LeftUpoutside = self.LeftUp		
+		self.Event.MouseMove = self.MouseMove
+	end
+	function grid.scrollbar:MouseMove()
+		local m = Inspect.Mouse()
+		local delta = (m.y - self.baseY)
+		local scale = (self.parent.numRows * self.parent.rowHeight)
+		scale = scale / self.parent.scrollarea:GetHeight()
+		self.parent.scroll = (self.baseOffset - (delta * scale))
+		if self.parent.scroll > 0 then
+			self.parent.scroll = 0
+		end
+		self.parent:Resize()
+	end
+	function grid.scrollbar:LeftUp()
+		-- Disable unneeded events
+		self.Event.LeftUp = nil
+		self.Event.LeftUpoutside = nil
+		self.Event.MouseMove = nil
+	end
 	-- column headers
 	grid.headers = UI.CreateFrame("Frame", "Headers", grid)
 	grid.headers:SetPoint("TOPLEFT", grid, "TOPLEFT")
@@ -340,6 +368,7 @@ function NewGrid(parent)
 	grid.headers:SetHeight(grid.rowHeight)
 	grid.headers:SetBackgroundColor(
 		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
+	grid.headers:SetLayer(50)
 	-- Container for data rows
 	grid.area = UI.CreateFrame("Frame", "GridArea", grid)
 	grid.area:SetPoint("TOPLEFT", grid.headers, "BOTTOMLEFT", 0, -1)
@@ -394,13 +423,15 @@ function NewGrid(parent)
 			end
 		end
 		-- Now set width of columns
-		wid = self:GetWidth() / self.numCols
+		local space = self.area:GetWidth()
+		wid = space / self.numCols
 		for i, row in pairs(self.rows) do
 			for j = 1, self.numCols do
 				if wid > widths[j] then
 					row.cols[j]:SetWidth(wid)
 				else
 					row.cols[j]:SetWidth(widths[j])
+					wid = (space-(widths[j]-wid)) / self.numCols
 				end
 			end
 		end
@@ -415,7 +446,7 @@ function NewGrid(parent)
 		-- Hide rows that would hang off the top/bottom of the grid
 		local space = self.area:GetHeight()
 		local maxrows = math.floor(space / self.rowHeight)+1
-		local startrow = math.abs(self.scroll) / self.rowHeight
+		local startrow = math.floor((math.abs(self.scroll) / self.rowHeight))
 		for i = 1, self.numRows do
 			self.rows[i]:SetVisible(i < maxrows and i > startrow)
 		end
@@ -426,13 +457,17 @@ function NewGrid(parent)
 			end
 		end
 		-- Recalculate the scrollbar
-		local offset = math.abs(self.scroll) + 4
+		local scale = (self.numRows * self.rowHeight)
+		scale = scale / self.scrollarea:GetHeight()
+		local offset = (math.abs(self.scroll) / scale) + 4
 		maxrows = math.floor(space / self.rowHeight)
 		space = (self.scrollarea:GetHeight()-4)-offset
 		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, offset)
 		gripHeight = (maxrows / self.numRows) * space
 		if gripHeight > space then
 			gripHeight = space
+		elseif gripHeight < 22 then
+			gripHeight = 22
 		end
 		self.scrollbar:SetHeight(gripHeight)
 		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
