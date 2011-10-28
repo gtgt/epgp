@@ -36,6 +36,8 @@ radioHeight = 22
 local bdWidth = 2
 -- Inner border width
 local bdInsideWidth = 6
+-- Scrollbar width
+local scrollBarWidth = 22
 
 -- Dialog modes
 DialogConfirm = 1
@@ -307,18 +309,38 @@ function NewGrid(parent)
 	grid.rowHeight = heightGridRow
 	-- Internal properties
 	grid.rows = {}
+	-- Scroll offset
+	grid.scroll = 0
 	-- position within our parent
 	grid:SetLayer(0)
 	grid:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, 4)
 	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
 	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
+	-- Scroll bar area
+	grid.scrollarea = UI.CreateFrame("Frame", "ScrollArea", grid)
+	grid.scrollarea:SetPoint("TOPRIGHT", grid, "TOPRIGHT")
+	grid.scrollarea:SetPoint("BOTTOMRIGHT", grid, "BOTTOMRIGHT")
+	grid.scrollarea:SetWidth(scrollBarWidth)
+	grid.scrollarea:SetBackgroundColor(0,0,0,1)
+	-- Scroll grip
+	grid.scrollbar = UI.CreateFrame("Frame", "ScrollBar", grid.scrollarea)
+	grid.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, 4)
+	--grid.scrollbar:SetPoint("RIGHT",grid.scrollarea,"RIGHT", -4, 0)
+	grid.scrollbar:SetHeight(100)
+	grid.scrollbar:SetWidth(scrollBarWidth - 8)
+	grid.scrollbar:SetBackgroundColor(wkColour.r, wkColour.g, wkColour.b,
+		wkColour.a)
 	-- column headers
 	grid.headers = UI.CreateFrame("Frame", "Headers", grid)
 	grid.headers:SetPoint("TOPLEFT", grid, "TOPLEFT")
-	grid.headers:SetPoint("RIGHT", grid, "RIGHT")
+	grid.headers:SetPoint("RIGHT", grid.scrollarea, "LEFT")
 	grid.headers:SetHeight(grid.rowHeight)
 	grid.headers:SetBackgroundColor(
 		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
+	-- Container for data rows
+	grid.area = UI.CreateFrame("Frame", "GridArea", grid)
+	grid.area:SetPoint("TOPLEFT", grid.headers, "BOTTOMLEFT", 0, -1)
+	grid.area:SetPoint("BOTTOMRIGHT", grid.scrollarea, "BOTTOMLEFT")
 	-- Column header click handling
 	function grid:SetHeaderCallback(func)
 		-- We call "func" with the index of the column header clicked
@@ -387,11 +409,14 @@ function NewGrid(parent)
 				self.headers.cols[j]:SetWidth(widths[j])
 			end
 		end		
-		-- Hide rows that would hang off the bottom of the grid
-		space = self:GetHeight()
-		maxrows = math.floor(space / self.rowHeight)
+		-- Scroll the grid region
+		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
+		-- Hide rows that would hang off the top/bottom of the grid
+		local space = self.area:GetHeight()
+		local maxrows = math.floor(space / self.rowHeight)+1
+		local startrow = math.abs(self.scroll) / self.rowHeight
 		for i = 1, self.numRows do
-			self.rows[i]:SetVisible(i < maxrows)
+			self.rows[i]:SetVisible(i < maxrows and i > startrow)
 		end
 		-- Hide any rows at the bottom which are not used
 		for i = self.numRows, 1, -1 do
@@ -399,6 +424,14 @@ function NewGrid(parent)
 				self.rows[i]:SetVisible(false)
 			end
 		end
+		-- Recalculate the scrollbar
+		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, 4)
+		--self.scrollbar:SetPoint("RIGHT",grid.scrollarea,"RIGHT", -4, 0)
+		gripHeight = (maxrows / self.numRows) * space
+		if gripHeight > space then
+			gripHeight = space
+		end
+		self.scrollbar:SetHeight(gripHeight)
 		-- Limit minimum width to avoid columns hanging off edge
 		-- XXX This is a pathetic hack
 		minwidth = 0
@@ -428,22 +461,19 @@ function NewGrid(parent)
 	function grid:AddRow(rowdata, headers)
 		-- Create the row
 		if not headers then
-			row = UI.CreateFrame("Frame", "ARow", self)
+			row = UI.CreateFrame("Frame", "ARow", self.area)
 			row.selected = false
 		else
 			row = self.headers
 		end
 		ralign = self.rows[#self.rows]
-		if headers then
-			row:SetPoint("TOPLEFT", self, "TOPLEFT")
-			row:SetPoint("RIGHT", self, "RIGHT")
-		else
+		if not headers then
 			if not ralign then
-				row:SetPoint("TOPLEFT", self.headers, "BOTTOMLEFT")
-				row:SetPoint("RIGHT", self, "RIGHT")
+				row:SetPoint("TOPLEFT", self.area, "TOPLEFT")
+				row:SetPoint("RIGHT", self.scrollarea, "LEFT")
 			else
 				row:SetPoint("TOPLEFT", ralign, "BOTTOMLEFT")
-				row:SetPoint("RIGHT", self, "RIGHT")			
+				row:SetPoint("RIGHT", self.scrollarea, "LEFT")			
 			end
 		end
 		row:SetHeight(self.rowHeight)
