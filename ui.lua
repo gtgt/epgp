@@ -40,7 +40,7 @@ local bdWidth = 2
 -- Inner border width
 local bdInsideWidth = 6
 -- Scrollbar width
-local scrollBarWidth = 22
+local scrollBarWidth = 18
 
 -- Dialog modes
 DialogConfirm = 1
@@ -360,6 +360,7 @@ function NewGrid(parent)
 		self.Event.LeftUp = nil
 		self.Event.LeftUpoutside = nil
 		self.Event.MouseMove = nil
+		self.parent:Resize()
 	end
 	-- column headers
 	grid.headers = UI.CreateFrame("Frame", "Headers", grid)
@@ -444,11 +445,18 @@ function NewGrid(parent)
 			end
 		end		
 		-- Hide rows that would hang off the top/bottom of the grid
-		local space = self.area:GetHeight()
-		local maxrows = math.floor(space / self.rowHeight)+1
+		local space = self:GetHeight() - self.rowHeight
+		local maxrows = (space / self.rowHeight)-1
 		local startrow = math.floor((math.abs(self.scroll) / self.rowHeight))
+		local rows = 0
 		for i = 1, self.numRows do
-			self.rows[i]:SetVisible(i < maxrows and i > startrow)
+			local v = i > startrow
+			if v and rows < maxrows then
+				rows = rows + 1
+			else
+				v = false
+			end
+			self.rows[i]:SetVisible(v)
 		end
 		-- Hide any rows at the bottom which are not used
 		for i = self.numRows, 1, -1 do
@@ -460,10 +468,10 @@ function NewGrid(parent)
 		local scale = (self.numRows * self.rowHeight)
 		scale = scale / self.scrollarea:GetHeight()
 		local offset = (math.abs(self.scroll) / scale) + 4
-		maxrows = math.floor(space / self.rowHeight)
+		--maxrows = math.floor(space / self.rowHeight)
 		space = (self.scrollarea:GetHeight()-4)-offset
 		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, offset)
-		gripHeight = (maxrows / self.numRows) * space
+		gripHeight = (maxrows / self.numRows) * self.scrollarea:GetHeight()
 		if gripHeight > space then
 			gripHeight = space
 		elseif gripHeight < 22 then
