@@ -83,8 +83,8 @@ function UpdateGrid()
 		if player.calling then
 			row:SetTextColour(1, ClassColours[player.calling])
 		end
-		row:SetText(2, round(player:GetEP(), 1))
-		row:SetText(3, player:GetGP())
+		row:SetText(2, round(player:GetEP(), 0))
+		row:SetText(3, round(player:GetGP(), 0))
 		row:SetText(4, round(player:GetPR(),2))
 		for j = 2, 4 do
 			row:SetTextColour(j, {r=1, g=1, b=1, a=1})
