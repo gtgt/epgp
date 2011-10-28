@@ -347,10 +347,17 @@ function NewGrid(parent)
 	function grid.scrollbar:MouseMove()
 		local m = Inspect.Mouse()
 		local delta = (m.y - self.baseY)
-		local scale = (self.parent.numRows * self.parent.rowHeight)
-		scale = scale / self.parent.scrollarea:GetHeight()
+		local height = (self.parent.numRows * self.parent.rowHeight)
+		local scale = height / self.parent.scrollarea:GetHeight()
+		local mx = self.parent.scrollarea:GetHeight()
+		mx = ((self.parent.numRows+2) * self.parent.rowHeight) - mx
 		self.parent.scroll = (self.baseOffset - (delta * scale))
 		if self.parent.scroll > 0 then
+			self.parent.scroll = 0
+		elseif self.parent.scroll < -mx then
+			self.parent.scroll = -mx
+		end
+		if (self.parent.numRows * self.parent.rowHeight) < self.parent.scrollarea:GetHeight() then
 			self.parent.scroll = 0
 		end
 		self.parent:Resize()
