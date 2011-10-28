@@ -1,6 +1,9 @@
 --[[
 	ui.lua
-	Main Window and grid control.
+	EPGP GUI
+	This is mostly a hack.  Non of this code should be here, but at the time
+	of writing there is no UI framework which provides the UI elements we
+	need.  
 --]]
 
 -- Default border colour
@@ -324,7 +327,7 @@ function NewGrid(parent)
 	grid.scrollarea:SetBackgroundColor(0,0,0,1)
 	-- Scroll grip
 	grid.scrollbar = UI.CreateFrame("Frame", "ScrollBar", grid.scrollarea)
-	grid.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, 4)
+	grid.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, -4)
 	--grid.scrollbar:SetPoint("RIGHT",grid.scrollarea,"RIGHT", -4, 0)
 	grid.scrollbar:SetHeight(100)
 	grid.scrollbar:SetWidth(scrollBarWidth - 8)
@@ -409,8 +412,6 @@ function NewGrid(parent)
 				self.headers.cols[j]:SetWidth(widths[j])
 			end
 		end		
-		-- Scroll the grid region
-		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
 		-- Hide rows that would hang off the top/bottom of the grid
 		local space = self.area:GetHeight()
 		local maxrows = math.floor(space / self.rowHeight)+1
@@ -425,13 +426,16 @@ function NewGrid(parent)
 			end
 		end
 		-- Recalculate the scrollbar
-		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, 4)
-		--self.scrollbar:SetPoint("RIGHT",grid.scrollarea,"RIGHT", -4, 0)
+		local offset = math.abs(self.scroll) + 4
+		maxrows = math.floor(space / self.rowHeight)
+		space = (self.scrollarea:GetHeight()-4)-offset
+		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, offset)
 		gripHeight = (maxrows / self.numRows) * space
 		if gripHeight > space then
 			gripHeight = space
 		end
 		self.scrollbar:SetHeight(gripHeight)
+		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
 		-- Limit minimum width to avoid columns hanging off edge
 		-- XXX This is a pathetic hack
 		minwidth = 0
