@@ -45,7 +45,7 @@ LastSort = 4 -- also default sort order
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
 win:SetWidth(400)
-win:SetHeight(300)
+win:SetHeight(500)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 win.timerActive = false
 
