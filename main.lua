@@ -317,10 +317,12 @@ end
 function onVariablesLoaded(id)
 	if id ~= "EPGP" then return end
 	-- load the config
-	for _, p in pairs(saved_epgp) do
-		np = epgp:AddPlayer(p.playerName, p.calling)
-		np:SetGP(tonumber(p.GP))
-		np:SetEP(tonumber(p.EP))
+	if saved_epgp then
+		for _, p in pairs(saved_epgp) do
+			np = epgp:AddPlayer(p.playerName, p.calling)
+			np:SetGP(tonumber(p.GP))
+			np:SetEP(tonumber(p.EP))
+		end
 	end
 	-- Other settings
 	if not saved_config then
