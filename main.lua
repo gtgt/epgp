@@ -12,13 +12,27 @@
 UpdateFreq = 60*5
 
 -- Decay amount (this should not be here)
-DecayAmount = 7 -- in percent
+DecayAmount = 10 -- in percent
 
 -- Our main EPGP data
 epgp = GuildEPGP:Create()
 
 -- Our configuration options
 settings = nil
+
+-- Default GP price list
+GPPriceList = {
+	{"Neck / Ring", 40},
+	{"Gloves / Feet / Belt", 60},
+	{"Head / Shoulders", 60},
+	{"Trinket", 75},
+	{"1 Handed / Ranged / Wand", 80},
+	{"Chest / Legs", 100},
+	{"Relic 1 Handed", 150},
+	{"Relic Ranged / Wand", 150},
+	{"2 Handed", 160},
+	{"Relic 2 Handed", 300},
+}
 
 -- Our grid status icons
 StatusGreen = "gfx/icons/status_green.png"
@@ -31,7 +45,7 @@ LastSort = 4 -- also default sort order
 -- Create main window
 win = NewWindow("Main", "Chimaera EPGP")
 win:SetWidth(400)
-win:SetHeight(300)
+win:SetHeight(500)
 win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
 win.timerActive = false
 
@@ -69,8 +83,8 @@ function UpdateGrid()
 		if player.calling then
 			row:SetTextColour(1, ClassColours[player.calling])
 		end
-		row:SetText(2, round(player:GetEP(), 1))
-		row:SetText(3, player:GetGP())
+		row:SetText(2, round(player:GetEP(), 0))
+		row:SetText(3, round(player:GetGP(), 0))
 		row:SetText(4, round(player:GetPR(),2))
 		for j = 2, 4 do
 			row:SetTextColour(j, {r=1, g=1, b=1, a=1})
@@ -192,6 +206,19 @@ function ButtonStandbyClick()
 	UpdateGrid()
 end
 
+-- Select all/none in grid
+function ButtonSelectAllClick()
+	standby = win.grid:GetSelection(true)
+	if #standby <= 0 then
+		-- Select all
+		win.grid:SelectAll()
+	else
+		-- Select none
+		win.grid:ClearSelection()
+	end
+	UpdateGrid()
+end
+
 -- Delete players data
 function DeleteSelection()
 	nuke = win.grid:GetSelection(true)
@@ -215,7 +242,7 @@ function ButtonAddEPClick()
 end
 
 function ButtonAddGPClick()
-	GetEntry("Enter the number of Gear Points:",
+	GetOption("Enter the number of Gear Points:",
 		DoAddGP)
 end
 
@@ -252,7 +279,6 @@ function DoAddGP(text)
 		p:IncGP(gp)
 	end
 	Sort()
-	
 end
 
 -- Show a confirmation dialog
@@ -268,6 +294,11 @@ function GetEntry(msg, ok)
 	promptDialog:GetEntry(msg)
 end
 
+-- Show a dialog prompting for an option selection
+function GetOption(msg, ok)
+	promptDialog:SetOKCallback(ok)	
+	promptDialog:GetOption(msg, GPPriceList)
+end
 
 -- Add some EP to all currently active players
 function IncrementRaidEP()
@@ -285,8 +316,6 @@ end
 -- Saved variables have been loaded
 function onVariablesLoaded(id)
 	if id ~= "EPGP" then return end
-	-- bail out if we don't have a config
-	if not saved_epgp then return end
 	-- load the config
 	for _, p in pairs(saved_epgp) do
 		np = epgp:AddPlayer(p.playerName, p.calling)
@@ -303,6 +332,11 @@ function onVariablesLoaded(id)
 	win:SetVisible(saved_config["visible"])
 	if not saved_config["visible"] then
 		print("EPGP loaded, main window is hidden, use /epgp to show it")
+	end
+	if saved_config["gp_prices"] then
+		GPPriceList = saved_config["gp_prices"]
+	else
+		saved_config["gp_prices"] = GPPriceList
 	end
 
 	UpdateGrid()
@@ -379,13 +413,15 @@ win.toolbar:AddButton("delete.png",
 win.toolbar:AddButton("raid.png", 
 	"Start/Stop raid timer", ButtonTimerClick)
 win.toolbar:AddButton("addep.png", 
-	"Add Effort Points to selected players", ButtonAddEPClick)
+	"Add/remove Effort Points to selected players", ButtonAddEPClick)
 win.toolbar:AddButton("addgp.png", 
-	"Add loot to selected player (Add GP)", ButtonAddGPClick)
+	"Add/remove loot for selected player (Add GP)", ButtonAddGPClick)
 win.toolbar:AddButton("decay.png", 
-	"Calculate decay for all players", ButtonDecayClick)
+	"Calculate and apply decay for all players", ButtonDecayClick)
 win.toolbar:AddButton("standby.png", 
 	"Toggle standby status of selected players", ButtonStandbyClick)
+win.toolbar:AddButton("selectall.png", 
+	"Select all / none", ButtonSelectAllClick)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)

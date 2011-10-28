@@ -1,6 +1,9 @@
 --[[
 	ui.lua
-	Main Window and grid control.
+	EPGP GUI
+	This is mostly a hack.  Non of this code should be here, but at the time
+	of writing there is no UI framework which provides the UI elements we
+	need.  
 --]]
 
 -- Default border colour
@@ -22,6 +25,7 @@ local gsColour = {r = 0.1, g = 0.1, b = 0.5, a = 1.0}
 fontWindowTitle = 16
 fontStatusBar = 14
 fontGrid = 14
+fontOptionGroup = 14
 
 -- Heights
 heightTitleBar = 24
@@ -29,15 +33,19 @@ heightToolbar = 32
 heightBar = 28
 heightGridRow = 22
 heightStatusBar = 28
+radioHeight = 22
 
 -- Border width
 local bdWidth = 2
 -- Inner border width
 local bdInsideWidth = 6
+-- Scrollbar width
+local scrollBarWidth = 18
 
 -- Dialog modes
 DialogConfirm = 1
 DialogEdit = 2
+DialogOption = 3
 
 local context = UI.CreateContext("EPGP")
 
@@ -304,18 +312,75 @@ function NewGrid(parent)
 	grid.rowHeight = heightGridRow
 	-- Internal properties
 	grid.rows = {}
+	-- Scroll offset
+	grid.scroll = 0
 	-- position within our parent
 	grid:SetLayer(0)
 	grid:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, 4)
 	grid:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, -4)
 	grid:SetBackgroundColor(gdColour.r, gdColour.g, gdColour.b, gdColour.a)
+	-- Scroll bar area
+	grid.scrollarea = UI.CreateFrame("Frame", "ScrollArea", grid)
+	grid.scrollarea:SetPoint("TOPRIGHT", grid, "TOPRIGHT")
+	grid.scrollarea:SetPoint("BOTTOMRIGHT", grid, "BOTTOMRIGHT")
+	grid.scrollarea:SetWidth(scrollBarWidth)
+	grid.scrollarea:SetBackgroundColor(0,0,0,1)
+	-- Scroll grip
+	grid.scrollbar = UI.CreateFrame("Frame", "ScrollBar", grid.scrollarea)
+	grid.scrollbar.parent = grid
+	grid.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, -4)
+	grid.scrollbar:SetHeight(100)
+	grid.scrollbar:SetWidth(scrollBarWidth - 8)
+	grid.scrollbar:SetBackgroundColor(wkColour.r, wkColour.g, wkColour.b,
+		wkColour.a)
+	-- Scrollbar mouse handlers
+	function grid.scrollbar.Event:LeftDown()
+		-- Where are we clicked?
+		local m = Inspect.Mouse()
+		self.baseOffset = self.parent.scroll
+		self.baseY = m.y
+		-- Enable these events only when needed
+		self.Event.LeftUp = self.LeftUp
+		self.Event.LeftUpoutside = self.LeftUp		
+		self.Event.MouseMove = self.MouseMove
+	end
+	function grid.scrollbar:MouseMove()
+		local m = Inspect.Mouse()
+		local delta = (m.y - self.baseY)
+		local height = (self.parent.numRows * self.parent.rowHeight)
+		local scale = height / self.parent.scrollarea:GetHeight()
+		local mx = self.parent.scrollarea:GetHeight()
+		mx = ((self.parent.numRows+2) * self.parent.rowHeight) - mx
+		self.parent.scroll = (self.baseOffset - (delta * scale))
+		if self.parent.scroll > 0 then
+			self.parent.scroll = 0
+		elseif self.parent.scroll < -mx then
+			self.parent.scroll = -mx
+		end
+		if (self.parent.numRows * self.parent.rowHeight) < self.parent.scrollarea:GetHeight() then
+			self.parent.scroll = 0
+		end
+		self.parent:Resize()
+	end
+	function grid.scrollbar:LeftUp()
+		-- Disable unneeded events
+		self.Event.LeftUp = nil
+		self.Event.LeftUpoutside = nil
+		self.Event.MouseMove = nil
+		self.parent:Resize()
+	end
 	-- column headers
 	grid.headers = UI.CreateFrame("Frame", "Headers", grid)
 	grid.headers:SetPoint("TOPLEFT", grid, "TOPLEFT")
-	grid.headers:SetPoint("RIGHT", grid, "RIGHT")
+	grid.headers:SetPoint("RIGHT", grid.scrollarea, "LEFT")
 	grid.headers:SetHeight(grid.rowHeight)
 	grid.headers:SetBackgroundColor(
 		ghColour.r, ghColour.g, ghColour.b, ghColour.a)
+	grid.headers:SetLayer(50)
+	-- Container for data rows
+	grid.area = UI.CreateFrame("Frame", "GridArea", grid)
+	grid.area:SetPoint("TOPLEFT", grid.headers, "BOTTOMLEFT", 0, -1)
+	grid.area:SetPoint("BOTTOMRIGHT", grid.scrollarea, "BOTTOMLEFT")
 	-- Column header click handling
 	function grid:SetHeaderCallback(func)
 		-- We call "func" with the index of the column header clicked
@@ -327,6 +392,12 @@ function NewGrid(parent)
 	function grid:ClearSelection()
 		for i = 1, self.numRows do
 			self.rows[i]:Deselect()
+		end
+	end
+	-- Select all rows
+	function grid:SelectAll()
+		for i = 1, self.numRows do
+			self.rows[i]:Select()
 		end
 	end
 	-- Get indexes of selected rows or contents of first cell
@@ -360,13 +431,15 @@ function NewGrid(parent)
 			end
 		end
 		-- Now set width of columns
-		wid = self:GetWidth() / self.numCols
+		local space = self.area:GetWidth()
+		wid = space / self.numCols
 		for i, row in pairs(self.rows) do
 			for j = 1, self.numCols do
 				if wid > widths[j] then
 					row.cols[j]:SetWidth(wid)
 				else
 					row.cols[j]:SetWidth(widths[j])
+					wid = (space-(widths[j]-wid)) / self.numCols
 				end
 			end
 		end
@@ -378,11 +451,19 @@ function NewGrid(parent)
 				self.headers.cols[j]:SetWidth(widths[j])
 			end
 		end		
-		-- Hide rows that would hang off the bottom of the grid
-		space = self:GetHeight()
-		maxrows = math.floor(space / self.rowHeight)
+		-- Hide rows that would hang off the top/bottom of the grid
+		local space = self:GetHeight() - self.rowHeight
+		local maxrows = (space / self.rowHeight)-1
+		local startrow = math.floor((math.abs(self.scroll) / self.rowHeight))
+		local rows = 0
 		for i = 1, self.numRows do
-			self.rows[i]:SetVisible(i < maxrows)
+			local v = i > startrow
+			if v and rows < maxrows then
+				rows = rows + 1
+			else
+				v = false
+			end
+			self.rows[i]:SetVisible(v)
 		end
 		-- Hide any rows at the bottom which are not used
 		for i = self.numRows, 1, -1 do
@@ -390,6 +471,21 @@ function NewGrid(parent)
 				self.rows[i]:SetVisible(false)
 			end
 		end
+		-- Recalculate the scrollbar
+		local scale = (self.numRows * self.rowHeight)
+		scale = scale / self.scrollarea:GetHeight()
+		local offset = (math.abs(self.scroll) / scale) + 4
+		--maxrows = math.floor(space / self.rowHeight)
+		space = (self.scrollarea:GetHeight()-4)-offset
+		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4, offset)
+		gripHeight = (maxrows / self.numRows) * self.scrollarea:GetHeight()
+		if gripHeight > space then
+			gripHeight = space
+		elseif gripHeight < 22 then
+			gripHeight = 22
+		end
+		self.scrollbar:SetHeight(gripHeight)
+		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
 		-- Limit minimum width to avoid columns hanging off edge
 		-- XXX This is a pathetic hack
 		minwidth = 0
@@ -419,22 +515,19 @@ function NewGrid(parent)
 	function grid:AddRow(rowdata, headers)
 		-- Create the row
 		if not headers then
-			row = UI.CreateFrame("Frame", "ARow", self)
+			row = UI.CreateFrame("Frame", "ARow", self.area)
 			row.selected = false
 		else
 			row = self.headers
 		end
 		ralign = self.rows[#self.rows]
-		if headers then
-			row:SetPoint("TOPLEFT", self, "TOPLEFT")
-			row:SetPoint("RIGHT", self, "RIGHT")
-		else
+		if not headers then
 			if not ralign then
-				row:SetPoint("TOPLEFT", self.headers, "BOTTOMLEFT")
-				row:SetPoint("RIGHT", self, "RIGHT")
+				row:SetPoint("TOPLEFT", self.area, "TOPLEFT")
+				row:SetPoint("RIGHT", self.scrollarea, "LEFT")
 			else
 				row:SetPoint("TOPLEFT", ralign, "BOTTOMLEFT")
-				row:SetPoint("RIGHT", self, "RIGHT")			
+				row:SetPoint("RIGHT", self.scrollarea, "LEFT")			
 			end
 		end
 		row:SetHeight(self.rowHeight)
@@ -606,7 +699,11 @@ function NewDialog(mainWindow)
 		self.mode = DialogConfirm
 		self.workspace.prompt:SetText(msg)
 		self.workspace.edit:SetVisible(false)
-		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetHeight(160)
+		if self.radio then
+			self.radio:SetVisible(false)
+		end
 		self:SetVisible(true)
 	end
 	-- Dialog mode which prompts for text entry
@@ -615,9 +712,34 @@ function NewDialog(mainWindow)
 		self.mode = DialogEdit
 		self.workspace.prompt:SetText(msg)
 		self.workspace.edit:SetVisible(true)
-		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight() )
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetHeight(160)
+		if self.radio then
+			self.radio:SetVisible(false)
+		end
 		self:SetVisible(true)
 		self.workspace.edit:SetKeyFocus(true)		
+	end
+	-- Dialog mode which gives a list of options
+	function dialog:GetOption(msg, options)
+		self.mainWindow:Disable()
+		self.mode = DialogOption
+		self.workspace.prompt:SetText(msg)
+		self.workspace.edit:SetVisible(false)
+		self.workspace.prompt:SetHeight( self.workspace.prompt:GetFullHeight())
+		self:SetVisible(true)
+		self.workspace.edit:SetKeyFocus(false)
+		if self.radio then
+			self.radio:SetVisible(false)
+			self.radio = nil -- XXX We should free this (can't: API limitation)
+		end
+		self.radio = NewRadioGroup(self.workspace, options)
+		self.radio:SetPoint("TOPLEFT", self.workspace.prompt, "BOTTOMLEFT")
+		self.radio:SetPoint("BOTTOMRIGHT", self.workspace, "BOTTOMRIGHT")
+		self.radio:SetLayer(100)
+		local height = self.workspace.prompt:GetFullHeight()
+		height = 100 + height + (#self.radio.rows * radioHeight)
+		self:SetHeight( height )
 	end
 	-- Mouse handlers
 	function dialog:SetOKCallback(func)
@@ -628,21 +750,32 @@ function NewDialog(mainWindow)
 	end
 	function dialog.workspace.okbutton.Event:LeftDown()
 		-- prevent focus stealing
+		if self.parentDialog.radio then
+			self.parentDialog.radio.other:SetKeyFocus(false)
+		end
 		self.parentDialog.workspace.edit:SetKeyFocus(false)
 		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
 		if self.parentDialog.okCallback then
 			if self.parentDialog.mode == DialogConfirm then
 				self.parentDialog.okCallback()
-			else
+			elseif self.parentDialog.mode == DialogEdit then
 				entry = self.parentDialog.workspace.edit:GetText()
 				if not entry then entry = "" end
 				self.parentDialog.okCallback(entry)
+			elseif self.parentDialog.mode == DialogOption then
+				v = self.parentDialog.radio:GetValue()
+				if v then
+					self.parentDialog.okCallback(v)
+				end
 			end
 		end
 	end
 	function dialog.workspace.cancelbutton.Event:LeftDown()
 		-- prevent focus stealing
+		if self.parentDialog.radio then
+			self.parentDialog.radio.other:SetKeyFocus(false)
+		end
 		self.parentDialog.workspace.edit:SetKeyFocus(false)
 		self.parentDialog.mainWindow:Enable()
 		self.parentDialog:SetVisible(false)
@@ -652,4 +785,97 @@ function NewDialog(mainWindow)
 	end
 
 	return dialog
+end
+
+-- Create a new radio group
+-- Options is a table of pairs: "Label" -> "Value"
+function NewRadioGroup(parent, options)
+	-- Create our frame, we leave size and position to the creator
+	local win = UI.CreateFrame("Frame", "RadioGroup", parent)
+	win.parent = parent
+	win.rows = {}
+	win.selected = nil
+	win.value = nil
+	local align = win
+	-- Add manual entry option
+	opts = {}
+	for _, x in ipairs(options) do
+		table.insert(opts, x)
+	end
+	table.insert(opts, {"Other", nil})
+	win.options = opts
+	-- Redraw our radio group
+	function win:Redraw()
+		-- Set the radio options
+		for i, r in ipairs(self.rows) do
+			if i == self.selected then
+				r.icon:SetTexture("EPGP", "gfx/radio_on.png")
+			else
+				r.icon:SetTexture("EPGP", "gfx/radio_off.png")
+			end
+		end
+	end
+	-- Get the currently selected value
+	function win:GetValue()
+		-- Last option is always manual entry "other"
+		if self.selected == #self.options then
+			return self.other:GetText()
+		-- return the selected option's value if not "other"
+		elseif self.selected then
+			return self.options[self.selected][2]
+		end
+	end
+	-- For each option, add a radio button and a label
+	local row = nil
+	for i = 1, #opts do
+		-- Create a row for this option
+		row = UI.CreateFrame("Frame", "RadioGroup", win)
+		row.parent = win
+		if align == win then
+			row:SetPoint("TOPLEFT", win, "TOPLEFT", 0, 1)
+			row:SetPoint("RIGHT", win, "RIGHT")
+		else
+			row:SetPoint("TOPLEFT", align, "BOTTOMLEFT")
+			row:SetPoint("RIGHT", win, "RIGHT")
+		end
+		align = row
+		row:SetHeight(radioHeight)		
+		-- Create radio icon
+		local icon = UI.CreateFrame("Texture", "RadioButton", row)
+		icon:SetTexture("EPGP", "gfx/radio_off.png")
+		icon:SetPoint("TOPLEFT", row, "TOPLEFT")
+		icon:ResizeToTexture()
+		icon:SetLayer(5)
+		row.icon = icon
+		-- Create a label
+		local label = UI.CreateFrame("Text", "RadioLabel", row)
+		label:SetText(opts[i][1].." ("..tostring(opts[i][2])..")")
+		label:SetPoint("TOPLEFT", icon, "TOPRIGHT", 4, -4)
+		--label:SetPoint("RIGHT", row, "RIGHT")
+		label:SetFontSize(fontOptionGroup)
+		label:SetLayer(5)
+		row.label = label
+		-- Row mouse events
+		function row.Event:LeftDown()
+			self.parent.selected = i
+			self.parent:Redraw()
+			-- Enable/Disable the "other" text entry
+			if i == #self.parent.options then 
+				self.parent.other:SetKeyFocus(true)
+			else
+				self.parent.other:SetKeyFocus(false)
+			end
+		end
+		-- Remember the row
+		table.insert(win.rows, row)
+	end
+	-- Add the text entry to the "Other" entry
+	local txt = UI.CreateFrame("RiftTextfield", "OtherEntry", row)
+	txt:SetPoint("TOPLEFT", row.label, "TOPRIGHT", 4, 2)
+	txt:SetLayer(8)
+	txt:SetText("")
+	txt:SetBackgroundColor(0.2,0.2,0.2,1)
+	win.other = txt
+	
+	return win
 end

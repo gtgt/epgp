@@ -44,8 +44,6 @@ function PlayerEPGP:SetGP(gp)
 end
 -- Increment GP
 function PlayerEPGP:IncGP(gp)
-	-- Sanity
-	if gp < 1 then return end
 	-- Add to realGP
 	self.realGP = self.realGP + gp
 end

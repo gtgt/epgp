@@ -3,13 +3,13 @@ Name = "Chimaera EPGP"
 NameShort = "EPGP"
 Description = "An implementation of the EPGP raid loot allocation system."
 Author = "Jug@Steampike"
-Version = "0.6.2"
+Version = "0.8.0"
 Email = "jug@mangband.org"
 Environment = "1.5"
 RunOnStartup = {"game.lua", "ui.lua", "epgp.lua", "main.lua"}
 SavedVariables = { 
 	saved_epgp = "account",
-	saved_config = "character"
+	saved_config = "account"
 }
 Dependencies = {
 }
