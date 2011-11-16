@@ -474,6 +474,9 @@ function NewGrid(parent)
 		-- Recalculate the scrollbar
 		local scale = (self.numRows * self.rowHeight)
 		scale = scale / self.scrollarea:GetHeight()
+		if scale == 0 then
+			scale = 1
+		end
 		local offset = (math.abs(self.scroll) / scale) + 4
 		--maxrows = math.floor(space / self.rowHeight)
 		space = (self.scrollarea:GetHeight()-4)-offset
