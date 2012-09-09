@@ -1,6 +1,7 @@
 EPGP (based on Chimaera EPGP)
 An implementation of the EPGP raid loot allocation system.
 <Jug@Steampike>
+<Valerien@Deepwood>
 <Athie@Icewatch>
 
 Introduction
@@ -45,6 +46,6 @@ The addon was originally designed for use within the Chimaera guild on Steampike
 	Coded by Jug
 	Design by Jug and Enve
 	Initial testing by Chimaera
-	Updated by Athie
+	Updated by Valerien, Athie
 Toolbar button icons designed by dryicons.com
 Based on the EPGP system described at epgpweb.com
