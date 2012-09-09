@@ -151,6 +151,7 @@ function ButtonAddClick()
 		epgp:AddPlayer(p.name, p.calling)
 	end
 	UpdateGrid(win.grid, epgp)
+	ButtonSelectPublish()
 end
 
 -- Start/Stop raid timer
@@ -195,6 +196,7 @@ end
 function DoDecay()
 	epgp:ApplyDecay(DecayAmount)
 	UpdateGrid()
+	ButtonSelectPublish()
 end
 
 function ButtonDecayClick()
@@ -237,6 +239,7 @@ function DeleteSelection()
 	end
 	win.grid:ClearSelection()
 	UpdateGrid()
+	ButtonSelectPublish()
 end
 
 function ButtonDeleteClick()
@@ -268,7 +271,8 @@ function DoAddEP(text)
 			p:IncEP(ep)
 		end
 	end
-	Sort()	
+	Sort()
+	ButtonSelectPublish()
 end
 
 function DoAddGP(text)
@@ -287,6 +291,7 @@ function DoAddGP(text)
 		p:IncGP(gp)
 	end
 	Sort()
+	ButtonSelectPublish()
 end
 
 -- Show a confirmation dialog
