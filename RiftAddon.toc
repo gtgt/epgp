@@ -1,15 +1,22 @@
 Identifier = "EPGP"
-Name = "Chimaera EPGP"
+Name = "EPGP"
 NameShort = "EPGP"
-Description = "An implementation of the EPGP raid loot allocation system."
-Author = "Jug@Steampike"
+Description = "An updated implementation of the EPGP raid loot allocation system (original addon: Chimaera EPGP)"
+Author = "Athie@Icewatch (original code: Jug@Steampike)"
 Version = "0.8.1"
-Email = "jug@mangband.org"
+Email = "gt@kani.hu"
 Environment = "1.5"
 RunOnStartup = {"game.lua", "ui.lua", "epgp.lua", "main.lua"}
 SavedVariables = { 
-	saved_epgp = "account",
-	saved_config = "account"
+	saved_epgp = "character",
+	gp_prices = "character",
+	epgp_x = "account",
+	epgp_y = "account",
+	epgp_button_x = "account",
+	epgp_button_y = "account",
+	epgp_width = "account",
+	epgp_height = "account",
+	epgp_visible = "account",
 }
 Dependencies = {
 }

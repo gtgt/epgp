@@ -400,14 +400,20 @@ function NewGrid(parent)
 			self.rows[i]:Select()
 		end
 	end
+	-- Select one row
+	function grid:SelectRow(row)
+		if row <= self.numRows then
+			self.rows[row]:Select()
+		end
+	end
 	-- Get indexes of selected rows or contents of first cell
 	function grid:GetSelection(names)
 		selection = {}
 		for i = 1, self.numRows do
 			if self.rows[i].selected then
 				if names then
-					table.insert(selection, 
-						self.rows[i].cols[1].label:GetText())
+					tmp = self.rows[i].cols[1].label:GetText();
+					table.insert(selection, tmp)
 				else
 					table.insert(selection, i)
 				end
@@ -417,83 +423,97 @@ function NewGrid(parent)
 	end
 	-- Resize handler
 	function grid:Resize()
-		--if not self.numRows or self.numRows <= 0 and then return end
-		-- Adjust width of our columns, first find min widths
-		widths = {}
-		for i = 1, self.numCols do table.insert(widths, 0) end
-		for i, row in pairs(self.rows) do
-			for j = 1, self.numCols do
-				wid = row.cols[j].label:GetFullWidth()
-				if j == 1 then wid = wid + 13 end -- XXX Hack
-				if wid > widths[j] then
-					widths[j] = wid
+
+		local players = nil
+		-- Only display active players if we're raiding
+		if win.timerActive then
+			players = epgp:GetActivePlayers()
+		else
+			players = epgp.players
+		end
+		-- Get player list
+		nump = #players
+
+		if nump ~= 0 then
+	
+			--if not self.numRows or self.numRows <= 0 and then return end
+			-- Adjust width of our columns, first find min widths
+			widths = {}
+			for i = 1, self.numCols do table.insert(widths, 0) end
+			for i, row in pairs(self.rows) do
+				for j = 1, self.numCols do
+					wid = row.cols[j].label:GetFullWidth()
+					if j == 1 then wid = wid + 13 end -- XXX Hack
+					if wid > widths[j] then
+						widths[j] = wid
+					end
 				end
 			end
-		end
-		-- Now set width of columns
-		local space = self.area:GetWidth()
-		wid = space / self.numCols
-		for i, row in pairs(self.rows) do
+			-- Now set width of columns
+			local space = self.area:GetWidth()
+			wid = space / self.numCols
+			for i, row in pairs(self.rows) do
+				for j = 1, self.numCols do
+					if wid > widths[j] then
+						row.cols[j]:SetWidth(wid)
+					else
+						row.cols[j]:SetWidth(widths[j])
+						wid = (space-(widths[j]-wid)) / self.numCols
+					end
+				end
+			end
+			-- And width of headers
 			for j = 1, self.numCols do
 				if wid > widths[j] then
-					row.cols[j]:SetWidth(wid)
+					self.headers.cols[j]:SetWidth(wid)
 				else
-					row.cols[j]:SetWidth(widths[j])
-					wid = (space-(widths[j]-wid)) / self.numCols
+					self.headers.cols[j]:SetWidth(widths[j])
+				end
+			end		
+			-- Hide rows that would hang off the top/bottom of the grid
+			local space = self:GetHeight() - self.rowHeight
+			local maxrows = (space / self.rowHeight)-1
+			local startrow = math.floor((math.abs(self.scroll) / self.rowHeight))
+			local rows = 0
+			for i = 1, self.numRows do
+				local v = i > startrow
+				if v and rows < maxrows then
+					rows = rows + 1
+				else
+					v = false
+				end
+				self.rows[i]:SetVisible(v)
+			end
+			-- Hide any rows at the bottom which are not used
+			for i = self.numRows, 1, -1 do
+				if self.rows[i].cols[1].label:GetText() == "" then
+					self.rows[i]:SetVisible(false)
 				end
 			end
-		end
-		-- And width of headers
-		for j = 1, self.numCols do
-			if wid > widths[j] then
-				self.headers.cols[j]:SetWidth(wid)
-			else
-				self.headers.cols[j]:SetWidth(widths[j])
+			-- Recalculate the scrollbar
+			local scale = (self.numRows * self.rowHeight)
+			scale = scale / self.scrollarea:GetHeight()
+			local offset = (math.abs(self.scroll) / scale) + 4
+			--maxrows = math.floor(space / self.rowHeight)
+			space = (self.scrollarea:GetHeight()-4)-offset
+			self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4,offset)
+			gripHeight = (maxrows / self.numRows) * self.scrollarea:GetHeight()
+			if gripHeight > space then
+				gripHeight = space
+			elseif gripHeight < 22 then
+				gripHeight = 22
 			end
-		end		
-		-- Hide rows that would hang off the top/bottom of the grid
-		local space = self:GetHeight() - self.rowHeight
-		local maxrows = (space / self.rowHeight)-1
-		local startrow = math.floor((math.abs(self.scroll) / self.rowHeight))
-		local rows = 0
-		for i = 1, self.numRows do
-			local v = i > startrow
-			if v and rows < maxrows then
-				rows = rows + 1
-			else
-				v = false
+			self.scrollbar:SetHeight(gripHeight)
+			self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
+			-- Limit minimum width to avoid columns hanging off edge
+			-- XXX This is a pathetic hack
+			minwidth = 0
+			for i = 1, #widths do
+				minwidth = minwidth + widths[i]
 			end
-			self.rows[i]:SetVisible(v)
+			parent = FindParent(self)
+			parent.minWidth = widths[1] + minwidth
 		end
-		-- Hide any rows at the bottom which are not used
-		for i = self.numRows, 1, -1 do
-			if self.rows[i].cols[1].label:GetText() == "" then
-				self.rows[i]:SetVisible(false)
-			end
-		end
-		-- Recalculate the scrollbar
-		local scale = (self.numRows * self.rowHeight)
-		scale = scale / self.scrollarea:GetHeight()
-		local offset = (math.abs(self.scroll) / scale) + 4
-		--maxrows = math.floor(space / self.rowHeight)
-		space = (self.scrollarea:GetHeight()-4)-offset
-		self.scrollbar:SetPoint("TOPLEFT", grid.scrollarea, "TOPLEFT", 4,offset)
-		gripHeight = (maxrows / self.numRows) * self.scrollarea:GetHeight()
-		if gripHeight > space then
-			gripHeight = space
-		elseif gripHeight < 22 then
-			gripHeight = 22
-		end
-		self.scrollbar:SetHeight(gripHeight)
-		self.area:SetPoint("TOPLEFT",grid.headers, "BOTTOMLEFT",0, self.scroll)
-		-- Limit minimum width to avoid columns hanging off edge
-		-- XXX This is a pathetic hack
-		minwidth = 0
-		for i = 1, #widths do
-			minwidth = minwidth + widths[i]
-		end
-		parent = FindParent(self)
-		parent.minWidth = widths[1] + minwidth
 	end
 	function grid.Event:Size()
 		self:Resize()
@@ -660,7 +680,7 @@ function NewDialog(mainWindow)
 	dialog:SetHeight(160)
 	dialog:SetDialog()
 	dialog:SetLayer(200)
-	dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	dialog:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 10, 10)
 	canvas = dialog.workspace
 	-- Add prompt
 	prompt = UI.CreateFrame("Text", "TitleText", canvas)
@@ -692,6 +712,8 @@ function NewDialog(mainWindow)
 	canvas.edit:SetPoint("TOPCENTER", canvas.prompt, "BOTTOMCENTER")
 	canvas.edit:SetLayer(8)
 	canvas.edit:SetBackgroundColor(0.2,0.2,0.2,1)
+	canvas.edit:SetText("")
+
 	-- We can't actually free resources with the current API, so we make this
 	-- dialog reusable
 	function dialog:Confirm(msg)
@@ -878,4 +900,60 @@ function NewRadioGroup(parent, options)
 	win.other = txt
 	
 	return win
+end
+
+function NewButton(icon, callback)
+	local but = UI.CreateFrame("Texture", "Button Texture", context)
+	but.activeIcon = "gfx/icons/"..icon
+	but.inactiveIcon = "gfx/icons/_"..icon
+	but:SetTexture("EPGP", but.inactiveIcon)
+	
+	function but:ApplySettings()
+		but:ClearPoint("CENTER")
+		but:ClearPoint("TOPLEFT")
+		but:SetPoint("CENTER", UIParent, "CENTER")
+		but:SetVisible(true)
+	end
+	
+	function but.Event:RightDown()
+		-- Where are we clicked?
+		m = Inspect.Mouse()
+		self.x = but:GetLeft()
+		self.y = but:GetTop()
+		self.dx = m.x - self.x
+		self.dy = m.y - self.y
+		self.dragging = true
+	end
+	function but.Event:RightUp()
+		self.dragging = false
+	end
+	function but.Event:RightUpoutside()
+		self.dragging = false
+	end
+	function but.Event:MouseMove()
+		if self.dragging then
+			local x, y
+			m = Inspect.Mouse()
+			x = m.x - self.dx
+			y = m.y - self.dy
+			but:SetPoint("TOPLEFT", UIParent, "TOPLEFT", x, y)
+			but:ResizeToTexture()
+		end
+	end
+	
+	function but.Event:MouseIn()
+		but:SetTexture("EPGP", but.activeIcon)
+	end
+	function but.Event:MouseOut()
+		but:SetTexture("EPGP", but.inactiveIcon)
+	end
+	
+	but.Event.LeftDown = callback
+	
+	but:ApplySettings()
+	
+	but:SetLayer(8)
+	but:SetMouseMasking("limited")
+	
+	return but
 end

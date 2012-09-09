@@ -1,7 +1,8 @@
 --[[
-	Chimaera EPGP
+	EPGP (original name: Chimaera EPGP)
 	Raid loot allocation system.
-	Jug <jug@mangband.org>
+	Jug (jug[---]mangband_d_org)
+	Athie (gt[---]kani_d_hu)
 	
 	An implementation of the EPGP raid loot allocation system.  Based on the
 	documentation available at epgpweb.com.
@@ -19,6 +20,13 @@ epgp = GuildEPGP:Create()
 
 -- Our configuration options
 settings = nil
+
+-- Default config options
+epgp_x = 200
+epgp_y = 200
+epgp_width = 400
+epgp_height = 500
+epgp_visible = true
 
 -- Default GP price list
 GPPriceList = {
@@ -43,10 +51,10 @@ StatusRed = "gfx/icons/status_red.png"
 LastSort = 4 -- also default sort order
 
 -- Create main window
-win = NewWindow("Main", "Chimaera EPGP")
-win:SetWidth(400)
-win:SetHeight(500)
-win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 200, 200)
+win = NewWindow("Main", "EPGP")
+win:SetWidth(epgp_width)
+win:SetHeight(epgp_height)
+win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", epgp_x, epgp_y)
 win.timerActive = false
 
 -- Create any dialogs
@@ -152,11 +160,11 @@ function ButtonTimerClick()
 	win.timerActive = not win.timerActive
 	if win.timerActive then
 		win.lastFrameTime = Inspect.Time.Real()
-		win.caption:SetText("Chimaera EPGP [Raid Active]")
+		win.caption:SetText("EPGP [Raid Active]")
 		-- Determine who is active and mark them
 		UpdateActive()
 	else
-		win.caption:SetText("Chimaera EPGP")
+		win.caption:SetText("EPGP")
 		-- Coming out of raid mode, clear all "active" flags
 		for i = 1, #epgp.players do
 			epgp.players[i].active = false
@@ -313,56 +321,154 @@ function IncrementRaidEP()
 	UpdateGrid()
 end
 
+function getDataCallback(failure, message)
+	 if(not(message == nil)) then
+		  print("getDataCallback failed")
+	 end
+end
+
+function dataReceived(target, segment, identifier, read, write, data)
+	words = { }
+	for w, sep in string.gsplit(data, "[:%s]", true) do
+		table.insert(words, w)
+	end
+	
+	for i = 1, #words, 3 do
+		if ((words[i] == nil) or (words[i+1] == nil) or (words[i+2] == nil) or (words[i+3] == nil)) then
+			break end
+			
+		if tonumber(words[i+1]) == 1 then
+			np = epgp:AddPlayer(words[i], "cleric")
+		elseif tonumber(words[i+1]) == 2 then
+			np = epgp:AddPlayer(words[i], "mage")
+		elseif tonumber(words[i+1]) == 3 then
+			np = epgp:AddPlayer(words[i], "rogue")
+		elseif tonumber(words[i+1]) == 4 then
+			np = epgp:AddPlayer(words[i], "warrior")
+		else
+			np = epgp:AddPlayer(words[i], "")
+		end
+		
+		np:SetEP(tonumber(words[i+2]))
+		np:SetGP(tonumber(words[i+3]))
+	end
+	
+	UpdateGrid(win.grid, epgp)
+end
+
 -- Saved variables have been loaded
 function onVariablesLoaded(id)
 	if id ~= "EPGP" then return end
 	-- load the config
-	if saved_epgp then
-		for _, p in pairs(saved_epgp) do
-			np = epgp:AddPlayer(p.playerName, p.calling)
-			np:SetGP(tonumber(p.GP))
-			np:SetEP(tonumber(p.EP))
-		end
-	end
-	-- Other settings
-	if not saved_config then
-		-- Go for defaults
-		saved_config = {}
-		saved_config["visible"] = true
-	end
+	--if saved_epgp then
+	--	for _, p in pairs(saved_epgp) do
+	--		np = epgp:AddPlayer(p.playerName, p.calling)
+	--		np:SetGP(tonumber(p.GP))
+	--		np:SetEP(tonumber(p.EP))
+	--	end
+	--end
+
+	-- load the data from guild storage
+	local me = Inspect.Unit.Detail("player")
+	local target = me.name
+	
+	Command.Storage.Get(target, "guild", "EPGP", getDataCallback)
+	table.insert(Event.Storage.Get, { dataReceived, "EPGP", "dataReceived" })
+
 	-- Apply configuration options
-	win:SetVisible(saved_config["visible"])
-	if not saved_config["visible"] then
+	win:SetVisible(epgp_visible)
+	if not epgp_visible then
 		print("EPGP loaded, main window is hidden, use /epgp to show it")
 	end
-	if saved_config["gp_prices"] then
-		GPPriceList = saved_config["gp_prices"]
+
+	if gp_prices ~= nil then
+		GPPriceList = gp_prices
 	else
-		saved_config["gp_prices"] = GPPriceList
+		gp_prices = GPPriceList
+	end
+
+	win:SetWidth(epgp_width)
+	win:SetHeight(epgp_height)
+	win:SetPoint("TOPLEFT", UIParent, "TOPLEFT", epgp_x, epgp_y)
+	
+	button:ClearPoint("CENTER")
+	button:ClearPoint("TOPLEFT")
+	if epgp_button_x ~= nil and epgp_button_y ~= nil then
+		button:SetPoint("TOPLEFT", UIParent, "TOPLEFT", epgp_button_x, epgp_button_y)
+	else
+		button:SetPoint("CENTER", UIParent, "CENTER")
 	end
 
 	UpdateGrid()
 end
 
+function setDataCallback(failure, message)
+	 if(not(message == nil)) then
+		  print("setDataCallback failed")
+	 end
+end
+
+function ButtonSelectRefresh()
+	-- load the data from guild storage
+	local me = Inspect.Unit.Detail("player")
+	local target = me.name
+	
+	for _, p in pairs(epgp.players) do
+		epgp:DeletePlayer(p.playerName)
+	end
+	
+	Command.Storage.Get(target, "guild", "EPGP", getDataCallback)
+	table.insert(Event.Storage.Get, { dataReceived, "EPGP", "dataReceived" })
+	
+	UpdateGrid()
+end
+
+function ButtonSelectPublish()
+	saved_epgp = {}
+	local output = ""
+	for _, p in pairs(epgp.players) do
+		table.insert(saved_epgp, p.playerName)
+		if p.calling == "cleric" then
+			table.insert(saved_epgp, 1)
+		elseif p.calling == "mage" then
+			table.insert(saved_epgp, 2)
+		elseif p.calling == "rogue" then
+			table.insert(saved_epgp, 3)
+		elseif p.calling == "warrior" then
+			table.insert(saved_epgp, 4)
+		else
+			table.insert(saved_epgp, 0)
+		end
+		table.insert(saved_epgp, tostring(p:GetEP()))
+		table.insert(saved_epgp, tostring(p:GetRealGP()))
+	end
+	
+	for i = 1, #saved_epgp, 4 do
+		output = string.concat(output, saved_epgp[i],":", saved_epgp[i+1], ":", saved_epgp[i+2], ":", saved_epgp[i+3], "\n")
+	end
+	
+	Command.Storage.Set("guild", "EPGP", "guild", "officer", output, setDataCallback)
+end
+
 -- About to save variables
 function onVariablesSave(id)
 	if id ~= "EPGP" then return end
-	saved_epgp = {}
-	for _, p in pairs(epgp.players) do
-		player = {}
-		player.playerName = p.playerName
-		player.calling = p.calling
-		player.EP = tostring(p:GetEP())
-		player.GP = tostring(p.realGP)
-		table.insert(saved_epgp, player)
-	end
+
+	epgp_x = win:GetLeft()
+	epgp_y = win:GetTop()
+	epgp_width = win:GetWidth()
+	epgp_height = win:GetHeight()
+	epgp_button_x = button:GetLeft()
+	epgp_button_y = button:GetTop()
+
+	ButtonSelectPublish()
 end
 
 -- Main Window closed
 function onMainWindowClose()
 	print("Closed EPGP Window, use /epgp to show it again")
 	win:SetVisible(false)
-	saved_config["visible"] = false
+	epgp_visible = false
 end
 
 -- Frame update event handler, used for timing
@@ -395,7 +501,7 @@ local function slashCommand(param)
 	if param == "" then
 		local visible = not win:GetVisible()
 		win:SetVisible( visible )
-		saved_config["visible"] = visible
+		epgp_visible = visible
 	else
 		local parts = {}
 		for w in param:gmatch("%w+") do
@@ -424,6 +530,10 @@ win.toolbar:AddButton("standby.png",
 	"Toggle standby status of selected players", ButtonStandbyClick)
 win.toolbar:AddButton("selectall.png", 
 	"Select all / none", ButtonSelectAllClick)
+win.toolbar:AddButton("refresh.png", 
+	"Refresh changes from guild storage", ButtonSelectRefresh)
+win.toolbar:AddButton("publish.png", 
+	"Publish changes to guild storage", ButtonSelectPublish)
 
 -- Create our grid
 win.grid = NewGrid(win.workspace, 4, 10)
@@ -431,6 +541,15 @@ win.grid:AddRow({"Name", "EP", "GP", "PR"}, true)
 win.grid:SetHeaderCallback(onHeaderClicked)
 -- Hook close event
 win:SetCloseCallback(onMainWindowClose)
+
+function ButtonClick()
+	local visible = not win:GetVisible()
+	win:SetVisible( visible )
+	epgp_visible = visible
+end
+
+-- Create button
+button = NewButton("visbutton.png", ButtonClick)
 
 -- Global event handlers
 table.insert(Event.Addon.SavedVariables.Load.End, 
