@@ -1,6 +1,7 @@
-Chimaera EPGP
+EPGP (based on Chimaera EPGP)
 An implementation of the EPGP raid loot allocation system.
 <Jug@Steampike>
+<Athie@Icewatch>
 
 Introduction
 EPGP is a system designed to fairly allocate loot to raid members. It's based on the principal that the more effort you put in to the guild, the more loot you will be awarded. What "effort" means is up to your guild officers to decide, time spent raiding is one measure of effort, but "Effort Points" can be awarded to players for anything, helping the guild out with administration or impressive skill in a raid for example.
@@ -44,5 +45,6 @@ The addon was originally designed for use within the Chimaera guild on Steampike
 	Coded by Jug
 	Design by Jug and Enve
 	Initial testing by Chimaera
+	Updated by Athie
 Toolbar button icons designed by dryicons.com
 Based on the EPGP system described at epgpweb.com
